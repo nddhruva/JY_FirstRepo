@@ -8,6 +8,7 @@ Frontend implementation for the Application Onboarding Platform.
 - Drag/drop Dashboard Builder (widget composition)
 - Analytics visualizations (progress, denials, errors, focus areas)
 - Report Designer (filters, SQL, GraphQL-like, and AI prompt modes)
+- Security & Compliance Center (framework coverage, compliance run trigger, accessibility preferences)
 
 ## Run
 
@@ -26,3 +27,4 @@ npm run build
 ## Environment
 
 - `VITE_API_BASE_URL` -> backend API base URL (default: `http://localhost:8000`)
+- `VITE_API_TIMEOUT_MS` -> request timeout in milliseconds (default: `20000`)

@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { ZodError } from 'zod'
 
 import { createTenant, login } from '../api'
 import type { AuthTokenResponse } from '../api'
+import { createTenantSchema, firstValidationError, loginSchema, uuidSchema } from '../validation'
 
 interface AuthPanelProps {
   onAuthenticated: (token: string) => void
@@ -11,20 +13,31 @@ interface AuthPanelProps {
 
 export function AuthPanel({ onAuthenticated, tenantId, setTenantId }: AuthPanelProps) {
   const [username, setUsername] = useState('platform_admin')
-  const [password, setPassword] = useState('ChangeMe123!')
+  const [password, setPassword] = useState('')
   const [tenantName, setTenantName] = useState('')
   const [tenantRegion, setTenantRegion] = useState('us-east-1')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
 
   async function handleLogin() {
     setError(null)
+    setSuccess(null)
     setIsLoading(true)
     try {
+      loginSchema.parse({ username, password })
+      if (tenantId) {
+        uuidSchema.parse(tenantId)
+      }
       const tokenResponse: AuthTokenResponse = await login(username, password)
       onAuthenticated(tokenResponse.access_token)
+      setSuccess('Authentication successful.')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to login')
+      if (err instanceof ZodError) {
+        setError(firstValidationError(err))
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to login')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -36,8 +49,11 @@ export function AuthPanel({ onAuthenticated, tenantId, setTenantId }: AuthPanelP
       return
     }
     setError(null)
+    setSuccess(null)
     setIsLoading(true)
     try {
+      loginSchema.parse({ username, password })
+      createTenantSchema.parse({ name: tenantName.trim(), region: tenantRegion })
       const tokenResponse: AuthTokenResponse = await login(username, password)
       const tenant = await createTenant(tokenResponse.access_token, {
         name: tenantName.trim(),
@@ -48,8 +64,13 @@ export function AuthPanel({ onAuthenticated, tenantId, setTenantId }: AuthPanelP
       })
       setTenantId(tenant.id)
       onAuthenticated(tokenResponse.access_token)
+      setSuccess('Tenant created and session authenticated.')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create tenant')
+      if (err instanceof ZodError) {
+        setError(firstValidationError(err))
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to create tenant')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -79,6 +100,7 @@ export function AuthPanel({ onAuthenticated, tenantId, setTenantId }: AuthPanelP
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             autoComplete="current-password"
+            placeholder="Enter platform admin password"
           />
         </label>
       </div>
@@ -126,6 +148,7 @@ export function AuthPanel({ onAuthenticated, tenantId, setTenantId }: AuthPanelP
       </div>
 
       {error ? <p className="error">{error}</p> : null}
+      {success ? <p className="success">{success}</p> : null}
     </section>
   )
 }

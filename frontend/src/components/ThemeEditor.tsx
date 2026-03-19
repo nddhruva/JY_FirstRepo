@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { ZodError } from 'zod'
 
 import { getBranding, saveBranding, uploadBrandingAsset } from '../api'
+import { validateAssetFile } from '../security'
 import type { BrandingConfig } from '../types'
+import { brandingUrlSchema, firstValidationError } from '../validation'
 
 interface ThemeEditorProps {
   token: string
@@ -30,7 +33,9 @@ export function ThemeEditor({ token, tenantId, onThemeUpdated }: ThemeEditorProp
     'logo',
   )
   const [assetFile, setAssetFile] = useState<File | null>(null)
+  const [draft, setDraft] = useState<Partial<BrandingConfig>>({})
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
+  const [formError, setFormError] = useState<string | null>(null)
 
   const brandingQuery = useQuery({
     queryKey: ['branding', tenantId],
@@ -52,18 +57,25 @@ export function ThemeEditor({ token, tenantId, onThemeUpdated }: ThemeEditorProp
     }
   }, [brandingQuery.data, tenantId])
 
-  const [formState, setFormState] = useState<BrandingConfig>(initialConfig)
-
   useEffect(() => {
-    setFormState(initialConfig)
     onThemeUpdated(initialConfig)
   }, [initialConfig, onThemeUpdated])
+
+  const formState = useMemo<BrandingConfig>(
+    () => ({
+      ...initialConfig,
+      ...draft,
+      colorPalette: { ...initialConfig.colorPalette, ...(draft.colorPalette ?? {}) },
+      fonts: { ...initialConfig.fonts, ...(draft.fonts ?? {}) },
+    }),
+    [draft, initialConfig],
+  )
 
   const saveMutation = useMutation({
     mutationFn: (payload: Partial<BrandingConfig>) => saveBranding(token, tenantId, payload),
     onSuccess: (data) => {
       queryClient.setQueryData(['branding', tenantId], data)
-      setFormState(data)
+      setDraft({})
       onThemeUpdated(data)
       setSaveMessage('Branding saved successfully.')
     },
@@ -75,34 +87,43 @@ export function ThemeEditor({ token, tenantId, onThemeUpdated }: ThemeEditorProp
       return uploadBrandingAsset(token, tenantId, assetType, assetFile)
     },
     onSuccess: (response) => {
-      const updated: BrandingConfig = {
-        ...formState,
+      const updated: Partial<BrandingConfig> = {
         logoUrl: assetType === 'logo' ? response.filePath : formState.logoUrl,
         backgroundImageUrl:
           assetType === 'background' ? response.filePath : formState.backgroundImageUrl,
       }
-      setFormState(updated)
+      setDraft((current) => ({ ...current, ...updated }))
       setAssetFile(null)
       setSaveMessage(`Uploaded ${assetType} asset successfully.`)
     },
   })
 
   function updatePalette(key: string, value: string) {
-    setFormState((current) => ({
+    setDraft((current) => ({
       ...current,
-      colorPalette: { ...current.colorPalette, [key]: value },
+      colorPalette: { ...(current.colorPalette ?? {}), [key]: value },
     }))
   }
 
   function updateFont(key: string, value: string) {
-    setFormState((current) => ({
+    setDraft((current) => ({
       ...current,
-      fonts: { ...current.fonts, [key]: value },
+      fonts: { ...(current.fonts ?? {}), [key]: value },
     }))
   }
 
   async function handleSave() {
     setSaveMessage(null)
+    setFormError(null)
+    try {
+      brandingUrlSchema.parse(formState.logoUrl ?? '')
+      brandingUrlSchema.parse(formState.backgroundImageUrl ?? '')
+    } catch (error) {
+      if (error instanceof ZodError) {
+        setFormError(firstValidationError(error))
+        return
+      }
+    }
     await saveMutation.mutateAsync({
       brandName: formState.brandName,
       colorPalette: formState.colorPalette,
@@ -131,7 +152,7 @@ export function ThemeEditor({ token, tenantId, onThemeUpdated }: ThemeEditorProp
         <input
           value={formState.brandName ?? ''}
           onChange={(event) =>
-            setFormState((current) => ({ ...current, brandName: event.target.value }))
+            setDraft((current) => ({ ...current, brandName: event.target.value }))
           }
           placeholder="Acme Identity Onboarding"
         />
@@ -172,7 +193,7 @@ export function ThemeEditor({ token, tenantId, onThemeUpdated }: ThemeEditorProp
           <input
             value={formState.logoUrl ?? ''}
             onChange={(event) =>
-              setFormState((current) => ({ ...current, logoUrl: event.target.value }))
+              setDraft((current) => ({ ...current, logoUrl: event.target.value }))
             }
             placeholder="https://cdn.example.com/logo.svg"
           />
@@ -182,7 +203,7 @@ export function ThemeEditor({ token, tenantId, onThemeUpdated }: ThemeEditorProp
           <input
             value={formState.backgroundImageUrl ?? ''}
             onChange={(event) =>
-              setFormState((current) => ({ ...current, backgroundImageUrl: event.target.value }))
+              setDraft((current) => ({ ...current, backgroundImageUrl: event.target.value }))
             }
             placeholder="https://cdn.example.com/background.jpg"
           />
@@ -194,7 +215,7 @@ export function ThemeEditor({ token, tenantId, onThemeUpdated }: ThemeEditorProp
         <textarea
           value={formState.customCss ?? ''}
           onChange={(event) =>
-            setFormState((current) => ({ ...current, customCss: event.target.value }))
+            setDraft((current) => ({ ...current, customCss: event.target.value }))
           }
           rows={4}
           placeholder=":root { --brand-radius: 14px; }"
@@ -216,7 +237,22 @@ export function ThemeEditor({ token, tenantId, onThemeUpdated }: ThemeEditorProp
         </select>
         <input
           type="file"
-          onChange={(event) => setAssetFile(event.target.files?.[0] ?? null)}
+          onChange={(event) => {
+            const selected = event.target.files?.[0] ?? null
+            if (!selected) {
+              setAssetFile(null)
+              return
+            }
+            const validationError = validateAssetFile(selected)
+            if (validationError) {
+              setAssetFile(null)
+              setFormError(validationError)
+              return
+            }
+            setSaveMessage(null)
+            setFormError(null)
+            setAssetFile(selected)
+          }}
           aria-label="Upload branding asset"
         />
         <button
@@ -235,6 +271,7 @@ export function ThemeEditor({ token, tenantId, onThemeUpdated }: ThemeEditorProp
       {uploadMutation.error ? (
         <p className="error">{(uploadMutation.error as Error).message}</p>
       ) : null}
+      {formError ? <p className="error">{formError}</p> : null}
       {saveMessage ? <p className="success">{saveMessage}</p> : null}
     </section>
   )

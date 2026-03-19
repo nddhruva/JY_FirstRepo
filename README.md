@@ -48,7 +48,7 @@ The solution is designed to be:
   Branding customization, intuitive dashboard/reporting UX capabilities, and security testing controls.
 
 - `docs/13-frontend-ui-layer.md`  
-  Implemented frontend UI layer with theme editor, drag/drop dashboard builder, and report designer.
+  Implemented frontend UI layer with theme editor, drag/drop dashboard builder, report designer, and security/compliance center.
 
 - `docs/guides/admin-guide.md`  
   Tenant/platform administration, policy configuration, connectors, and governance operations.

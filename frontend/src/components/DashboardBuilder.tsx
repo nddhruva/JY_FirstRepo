@@ -1,8 +1,14 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core'
+import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core'
 import type { DragEndEvent } from '@dnd-kit/core'
-import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
@@ -25,9 +31,17 @@ const widgetLibrary: Array<{ type: string; title: string }> = [
 
 function SortableWidgetItem({
   widget,
+  index,
+  total,
+  onMoveUp,
+  onMoveDown,
   onRemove,
 }: {
   widget: DashboardWidget
+  index: number
+  total: number
+  onMoveUp: (id: string) => void
+  onMoveDown: (id: string) => void
   onRemove: (id: string) => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: widget.id })
@@ -46,9 +60,27 @@ function SortableWidgetItem({
         <strong>{widget.title}</strong>
         <p className="widget-meta">{widget.type}</p>
       </div>
-      <button onClick={() => onRemove(widget.id)} aria-label={`Remove ${widget.title}`}>
-        Remove
-      </button>
+      <div className="widget-actions">
+        <button
+          type="button"
+          onClick={() => onMoveUp(widget.id)}
+          disabled={index === 0}
+          aria-label={`Move ${widget.title} up`}
+        >
+          ↑
+        </button>
+        <button
+          type="button"
+          onClick={() => onMoveDown(widget.id)}
+          disabled={index === total - 1}
+          aria-label={`Move ${widget.title} down`}
+        >
+          ↓
+        </button>
+        <button onClick={() => onRemove(widget.id)} aria-label={`Remove ${widget.title}`}>
+          Remove
+        </button>
+      </div>
     </li>
   )
 }
@@ -56,7 +88,12 @@ function SortableWidgetItem({
 export function DashboardBuilder({ token, tenantId }: DashboardBuilderProps) {
   const queryClient = useQueryClient()
   const [message, setMessage] = useState<string | null>(null)
-  const sensors = useSensors(useSensor(PointerSensor))
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  )
 
   const dashboardQuery = useQuery({
     queryKey: ['dashboard', tenantId],
@@ -122,6 +159,18 @@ export function DashboardBuilder({ token, tenantId }: DashboardBuilderProps) {
     })
   }
 
+  function moveWidgetByOffset(id: string, offset: -1 | 1) {
+    const index = widgets.findIndex((item) => item.id === id)
+    if (index < 0) return
+    const targetIndex = index + offset
+    if (targetIndex < 0 || targetIndex >= widgets.length) return
+    const updated = arrayMove(widgets, index, targetIndex)
+    queryClient.setQueryData(['dashboard', tenantId], {
+      ...(dashboardQuery.data ?? {}),
+      widgets: updated,
+    })
+  }
+
   const progressData = analyticsQuery.data
     ? [
         { name: 'Complete', value: analyticsQuery.data.completions },
@@ -163,8 +212,16 @@ export function DashboardBuilder({ token, tenantId }: DashboardBuilderProps) {
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={widgets.map((item) => item.id)} strategy={verticalListSortingStrategy}>
           <ul className="widget-list">
-            {widgets.map((widget) => (
-              <SortableWidgetItem key={widget.id} widget={widget} onRemove={removeWidget} />
+            {widgets.map((widget, index) => (
+              <SortableWidgetItem
+                key={widget.id}
+                widget={widget}
+                index={index}
+                total={widgets.length}
+                onMoveUp={(id) => moveWidgetByOffset(id, -1)}
+                onMoveDown={(id) => moveWidgetByOffset(id, 1)}
+                onRemove={removeWidget}
+              />
             ))}
           </ul>
         </SortableContext>

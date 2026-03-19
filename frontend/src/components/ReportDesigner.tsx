@@ -1,9 +1,12 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { ZodError } from 'zod'
 
 import { generateReport, listReports } from '../api'
+import { validateSafeSqlClient } from '../security'
 import type { ReportMode, ReportResult } from '../types'
+import { firstValidationError, reportDraftSchema } from '../validation'
 
 interface ReportDesignerProps {
   token: string
@@ -29,6 +32,7 @@ const aiPromptSuggestions = [
 
 export function ReportDesigner({ token, tenantId }: ReportDesignerProps) {
   const queryClient = useQueryClient()
+  const [formError, setFormError] = useState<string | null>(null)
   const [draft, setDraft] = useState<ReportDraft>({
     title: 'Custom Operations Report',
     mode: 'filters',
@@ -84,11 +88,41 @@ export function ReportDesigner({ token, tenantId }: ReportDesignerProps) {
     setDraft((current) => ({ ...current, mode }))
   }
 
+  function handleGenerate() {
+    setFormError(null)
+    try {
+      reportDraftSchema.parse({ title: draft.title, limit: draft.limit })
+      if (draft.mode === 'sql') {
+        const sqlError = validateSafeSqlClient(draft.sqlQuery)
+        if (sqlError) {
+          setFormError(sqlError)
+          return
+        }
+      }
+      if (draft.mode === 'graphql' && !draft.graphqlQuery.trim()) {
+        setFormError('GraphQL query is required.')
+        return
+      }
+      if (draft.mode === 'ai_prompt' && draft.aiPrompt.trim().length < 10) {
+        setFormError('AI prompt should be at least 10 characters.')
+        return
+      }
+    } catch (error) {
+      if (error instanceof ZodError) {
+        setFormError(firstValidationError(error))
+        return
+      }
+      setFormError('Report request is invalid.')
+      return
+    }
+    reportMutation.mutate()
+  }
+
   return (
     <section className="panel">
       <div className="panel-header">
         <h2>Report Designer</h2>
-        <button disabled={reportMutation.isPending} onClick={() => reportMutation.mutate()}>
+        <button disabled={reportMutation.isPending} onClick={handleGenerate}>
           {reportMutation.isPending ? 'Generating...' : 'Generate Report'}
         </button>
       </div>
@@ -271,6 +305,7 @@ export function ReportDesigner({ token, tenantId }: ReportDesignerProps) {
       {reportMutation.error ? (
         <p className="error">{(reportMutation.error as Error).message}</p>
       ) : null}
+      {formError ? <p className="error">{formError}</p> : null}
       {reportsQuery.error ? <p className="error">{(reportsQuery.error as Error).message}</p> : null}
     </section>
   )

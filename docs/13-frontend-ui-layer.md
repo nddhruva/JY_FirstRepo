@@ -69,6 +69,21 @@ APIs used:
 - `POST /reports/generate`
 - `GET /reports`
 
+### 5) Security & Compliance Center
+
+Capabilities:
+- view framework catalog coverage (SOC, GDPR, HIPAA, SOX, PCI, CCPA/CPRA, ISO)
+- queue compliance report generation jobs by framework and JSON scope
+- manage user accessibility preferences (keyboard mode, focus style, reduced motion, contrast, screen-reader optimization)
+- review runtime security posture checklist
+
+APIs used:
+- `GET /compliance/frameworks`
+- `POST /compliance/reports/run`
+- `GET /users/me/accessibility-preferences`
+- `PUT /users/me/accessibility-preferences`
+- `GET /i18n/locales`
+
 ## UX and Intuitiveness
 
 Implemented UX principles:
@@ -77,12 +92,15 @@ Implemented UX principles:
 - responsive layout for desktop/tablet
 - visual charting for quick decision focus
 - persistent auth and tenant workspace context
+- keyboard shortcuts (`Alt+1/2/3/4`) and skip-link support
 
 ## Security and Quality Hooks
 
 - backend JWT auth + RBAC policy enforced for all protected API operations
 - frontend relies on token-based API client
 - backend security headers and upload validation active
+- frontend input validation (zod), SQL safety pre-check, upload extension/size pre-check
+- API timeout and typed error handling (`ApiError`)
 - security checks runnable via `scripts/security-checks.sh`
 
 ## Run Frontend

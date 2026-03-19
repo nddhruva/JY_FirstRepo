@@ -5,10 +5,13 @@ import { getDatabaseCapabilities } from './api'
 import { AuthPanel } from './components/AuthPanel'
 import { DashboardBuilder } from './components/DashboardBuilder'
 import { ReportDesigner } from './components/ReportDesigner'
+import { SecurityComplianceCenter } from './components/SecurityComplianceCenter'
 import { ThemeEditor } from './components/ThemeEditor'
-import type { BrandingConfig } from './types'
+import { parseJwtSession, tokenExpiresInSeconds } from './security'
+import type { AccessibilityPreferences, BrandingConfig, JwtSessionPayload } from './types'
+import { uuidSchema } from './validation'
 
-type Tab = 'theme' | 'dashboard' | 'reports'
+type Tab = 'theme' | 'dashboard' | 'reports' | 'compliance'
 
 function applyTheme(branding: BrandingConfig) {
   const root = document.documentElement
@@ -31,11 +34,31 @@ function applyTheme(branding: BrandingConfig) {
   }
 }
 
+function applyAccessibilityPreferences(preferences: AccessibilityPreferences) {
+  const root = document.documentElement
+  root.classList.toggle('a11y-high-contrast', preferences.highContrastMode)
+  root.classList.toggle('a11y-reduced-motion', preferences.reducedMotion)
+  root.classList.toggle('a11y-screen-reader', preferences.screenReaderOptimized)
+  root.classList.toggle('a11y-keyboard-only', preferences.keyboardOnlyMode)
+  root.setAttribute('data-focus-ring-style', preferences.focusRingStyle || 'default')
+}
+
 function App() {
-  const [token, setToken] = useState(() => localStorage.getItem('aop_token') ?? '')
-  const [tenantId, setTenantId] = useState(() => localStorage.getItem('aop_tenant_id') ?? '')
+  const [token, setToken] = useState(() => sessionStorage.getItem('aop_token') ?? '')
+  const [tenantId, setTenantId] = useState(() => sessionStorage.getItem('aop_tenant_id') ?? '')
   const [activeTab, setActiveTab] = useState<Tab>('theme')
   const [themePreview, setThemePreview] = useState<BrandingConfig | null>(null)
+  const [sessionTick, setSessionTick] = useState(() => Date.now())
+  const [notice, setNotice] = useState<string | null>(null)
+  const [accessibility, setAccessibility] = useState<AccessibilityPreferences>({
+    keyboardOnlyMode: true,
+    focusRingStyle: 'default',
+    reducedMotion: false,
+    highContrastMode: false,
+    screenReaderOptimized: false,
+  })
+  const tenantIsValid = useMemo(() => uuidSchema.safeParse(tenantId).success, [tenantId])
+  const session = useMemo<JwtSessionPayload | null>(() => parseJwtSession(token), [token])
 
   const dbCapabilitiesQuery = useQuery({
     queryKey: ['db-capabilities', token],
@@ -44,13 +67,16 @@ function App() {
   })
 
   useEffect(() => {
-    if (token) localStorage.setItem('aop_token', token)
-    else localStorage.removeItem('aop_token')
+    if (token) {
+      sessionStorage.setItem('aop_token', token)
+    } else {
+      sessionStorage.removeItem('aop_token')
+    }
   }, [token])
 
   useEffect(() => {
-    if (tenantId) localStorage.setItem('aop_tenant_id', tenantId)
-    else localStorage.removeItem('aop_tenant_id')
+    if (tenantId) sessionStorage.setItem('aop_tenant_id', tenantId)
+    else sessionStorage.removeItem('aop_tenant_id')
   }, [tenantId])
 
   useEffect(() => {
@@ -59,31 +85,99 @@ function App() {
     }
   }, [themePreview])
 
+  useEffect(() => {
+    applyAccessibilityPreferences(accessibility)
+  }, [accessibility])
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setSessionTick(Date.now())
+      const expiresIn = tokenExpiresInSeconds(session)
+      if (typeof expiresIn === 'number' && expiresIn <= 0) {
+        setNotice('Session expired for security reasons. Please sign in again.')
+        setToken('')
+      }
+    }, 15_000)
+    return () => window.clearInterval(interval)
+  }, [session])
+
+  useEffect(() => {
+    function onHotkeys(event: KeyboardEvent) {
+      if (!token || !tenantId || !event.altKey) return
+      if (event.key === '1') setActiveTab('theme')
+      if (event.key === '2') setActiveTab('dashboard')
+      if (event.key === '3') setActiveTab('reports')
+      if (event.key === '4') setActiveTab('compliance')
+    }
+    window.addEventListener('keydown', onHotkeys)
+    return () => window.removeEventListener('keydown', onHotkeys)
+  }, [token, tenantId])
+
   const tabTitle = useMemo(() => {
     if (activeTab === 'theme') return 'Theme Editor'
     if (activeTab === 'dashboard') return 'Dashboard Builder'
-    return 'Report Designer'
+    if (activeTab === 'reports') return 'Report Designer'
+    return 'Security & Compliance Center'
   }, [activeTab])
+
+  const sessionExpiryLabel = useMemo(() => {
+    if (!session) return 'Not signed in'
+    const nowSeconds = Math.floor(sessionTick / 1000)
+    const expiresIn = session.exp - nowSeconds
+    if (expiresIn <= 0) return 'Expired'
+    const minutes = Math.floor(expiresIn / 60)
+    const seconds = expiresIn % 60
+    return `${minutes}m ${seconds}s`
+  }, [session, sessionTick])
 
   function handleSignOut() {
     setToken('')
+    setTenantId('')
     setThemePreview(null)
+    setNotice('Signed out.')
+  }
+
+  function handleTenantChange(value: string) {
+    setNotice(null)
+    if (!value.trim()) {
+      setTenantId('')
+      return
+    }
+    const validation = uuidSchema.safeParse(value.trim())
+    if (!validation.success) {
+      setNotice('Tenant ID should be a valid UUID.')
+      setTenantId(value)
+      return
+    }
+    setNotice(null)
+    setTenantId(value.trim())
   }
 
   return (
     <div className="app-shell">
+      <a className="skip-link" href="#main-content">
+        Skip to main content
+      </a>
       <header className="topbar">
         <div>
           <h1>AOP Studio</h1>
-          <p>Branding, dashboard design, and intelligent reporting for IAM onboarding</p>
+          <p>
+            Professional onboarding operations console with enterprise branding, analytics,
+            reporting, and compliance controls.
+          </p>
         </div>
         <div className="topbar-actions">
           <input
             value={tenantId}
-            onChange={(event) => setTenantId(event.target.value)}
+            onChange={(event) => handleTenantChange(event.target.value)}
             placeholder="Tenant UUID"
             aria-label="Tenant UUID"
           />
+          {session ? (
+            <span className="session-pill" aria-label={`Session expires in ${sessionExpiryLabel}`}>
+              Session: {sessionExpiryLabel}
+            </span>
+          ) : null}
           {token ? (
             <button className="ghost" onClick={handleSignOut}>
               Sign Out
@@ -92,15 +186,21 @@ function App() {
         </div>
       </header>
 
-      <main className="content">
+      <main id="main-content" className="content">
+        {notice ? (
+          <p role="status" aria-live="polite" className="info-banner">
+            {notice}
+          </p>
+        ) : null}
         {!token ? (
           <AuthPanel onAuthenticated={setToken} tenantId={tenantId} setTenantId={setTenantId} />
         ) : null}
 
-        {token && tenantId ? (
+        {token && tenantId && tenantIsValid ? (
           <div className="workspace">
             <aside className="sidebar">
               <h3>Workspace</h3>
+              <p className="helper-text">Use Alt+1/2/3/4 keyboard shortcuts to switch modules.</p>
               <button
                 className={activeTab === 'theme' ? 'active' : ''}
                 onClick={() => setActiveTab('theme')}
@@ -119,6 +219,12 @@ function App() {
               >
                 Report Designer
               </button>
+              <button
+                className={activeTab === 'compliance' ? 'active' : ''}
+                onClick={() => setActiveTab('compliance')}
+              >
+                Security & Compliance
+              </button>
 
               <div className="meta-card">
                 <h4>Backend Capability</h4>
@@ -135,9 +241,33 @@ function App() {
                           : 'disabled'}
                       </strong>
                     </li>
+                    <li>
+                      Cloud DB:{' '}
+                      <strong>
+                        {(dbCapabilitiesQuery.data.cloudFlavors?.aws ?? []).length +
+                          (dbCapabilitiesQuery.data.cloudFlavors?.azure ?? []).length +
+                          (dbCapabilitiesQuery.data.cloudFlavors?.gcp ?? []).length}
+                      </strong>
+                    </li>
                   </ul>
                 ) : (
                   <p className="helper-text">Loading capabilities...</p>
+                )}
+              </div>
+
+              <div className="meta-card">
+                <h4>Session Context</h4>
+                {session ? (
+                  <ul>
+                    <li>
+                      User: <strong>{session.username}</strong>
+                    </li>
+                    <li>
+                      Roles: <strong>{session.roles.join(', ') || 'none'}</strong>
+                    </li>
+                  </ul>
+                ) : (
+                  <p className="helper-text">No active session metadata.</p>
                 )}
               </div>
             </aside>
@@ -153,8 +283,24 @@ function App() {
               {activeTab === 'reports' ? (
                 <ReportDesigner token={token} tenantId={tenantId} />
               ) : null}
+              {activeTab === 'compliance' ? (
+                <SecurityComplianceCenter
+                  token={token}
+                  tenantId={tenantId}
+                  onAccessibilityUpdated={setAccessibility}
+                />
+              ) : null}
             </section>
           </div>
+        ) : null}
+        {token && tenantId && !tenantIsValid ? (
+          <section className="panel">
+            <h2>Tenant ID validation</h2>
+            <p className="helper-text">
+              Provide a valid tenant UUID to access branding, dashboards, reports, and compliance
+              operations.
+            </p>
+          </section>
         ) : null}
       </main>
     </div>

@@ -1,13 +1,18 @@
 import type {
+  AccessibilityPreferences,
   BrandingConfig,
+  ComplianceFramework,
+  ComplianceReportResponse,
   DashboardAnalyticsResponse,
   DashboardConfig,
   DatabaseCapabilities,
+  LocaleInfo,
   ReportMode,
   ReportResult,
 } from './types'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
+const API_TIMEOUT_MS = Number(import.meta.env.VITE_API_TIMEOUT_MS ?? '20000')
 
 export interface AuthTokenResponse {
   access_token: string
@@ -19,7 +24,17 @@ interface ApiRequestOptions extends RequestInit {
   token?: string
 }
 
+export class ApiError extends Error {
+  status: number
+  constructor(message: string, status: number) {
+    super(message)
+    this.status = status
+  }
+}
+
 async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
+  const controller = new AbortController()
+  const timeout = window.setTimeout(() => controller.abort(), API_TIMEOUT_MS)
   const headers = new Headers(options.headers)
   headers.set('Accept', 'application/json')
   if (!(options.body instanceof FormData)) {
@@ -29,16 +44,30 @@ async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Pro
     headers.set('Authorization', `Bearer ${options.token}`)
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers,
-  })
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      signal: controller.signal,
+      headers,
+    })
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new ApiError('Request timed out. Please try again.', 408)
+    }
+    throw new ApiError('Network request failed. Check connectivity and retry.', 503)
+  } finally {
+    window.clearTimeout(timeout)
+  }
 
   if (!response.ok) {
     const payload = (await response.json().catch(() => ({ detail: response.statusText }))) as {
       detail?: string
     }
-    throw new Error(payload.detail ?? `Request failed with ${response.status}`)
+    if (response.status === 401) {
+      throw new ApiError('Session is no longer authorized. Please sign in again.', 401)
+    }
+    throw new ApiError(payload.detail ?? `Request failed with ${response.status}`, response.status)
   }
   return (await response.json()) as T
 }
@@ -158,4 +187,42 @@ export async function listReports(
     `/reports?tenantId=${encodeURIComponent(tenantId)}`,
     { token },
   )
+}
+
+export async function getSupportedLocales(token: string): Promise<{ items: LocaleInfo[] }> {
+  return apiRequest<{ items: LocaleInfo[] }>('/i18n/locales', { token })
+}
+
+export async function getAccessibilityPreferences(token: string): Promise<AccessibilityPreferences> {
+  return apiRequest<AccessibilityPreferences>('/users/me/accessibility-preferences', { token })
+}
+
+export async function updateAccessibilityPreferences(
+  token: string,
+  payload: Partial<AccessibilityPreferences>,
+): Promise<AccessibilityPreferences> {
+  return apiRequest<AccessibilityPreferences>('/users/me/accessibility-preferences', {
+    method: 'PUT',
+    token,
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function getComplianceFrameworks(token: string): Promise<{ items: ComplianceFramework[] }> {
+  return apiRequest<{ items: ComplianceFramework[] }>('/compliance/frameworks', { token })
+}
+
+export async function runComplianceReport(
+  token: string,
+  payload: {
+    tenantId: string
+    framework: string
+    scope?: Record<string, unknown>
+  },
+): Promise<ComplianceReportResponse> {
+  return apiRequest<ComplianceReportResponse>('/compliance/reports/run', {
+    method: 'POST',
+    token,
+    body: JSON.stringify(payload),
+  })
 }

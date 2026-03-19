@@ -69,6 +69,18 @@ Outputs include:
 - summaries
 - visualization recommendations (charts/graphs)
 
+## Security and Compliance Workspace (UI Layer)
+
+The frontend now includes a dedicated **Security & Compliance Center** module that enables:
+
+- framework catalog visibility (SOC, GDPR, HIPAA, SOX, PCI, CCPA/CPRA, ISO)
+- compliance report job submission with JSON scope input
+- runtime standards checklist visibility for operations teams
+- accessibility preference controls (keyboard mode, reduced motion, high contrast, screen-reader optimization, focus style)
+- locale selection visibility with direction awareness (LTR/RTL)
+
+This aligns UX-level operations with compliance-by-design and accessibility objectives already present in backend APIs.
+
 ## Security-Solid Controls for Testing Criteria
 
 Implemented security controls to support penetration testing and SAST/DAST readiness:
@@ -80,6 +92,8 @@ Implemented security controls to support penetration testing and SAST/DAST readi
 - strict SQL reporting safeguards (read-only allowlist + keyword restrictions)
 - security headers middleware (`CSP`, `X-Frame-Options`, `nosniff`, etc.)
 - dependency security check pipeline (`bandit` + `pip-audit`)
+- frontend validation hardening (zod input schemas, safe SQL pre-checks, upload pre-checks, API timeout/error handling)
+- keyboard-first operability enhancements (skip-link, focus-ring settings, keyboard shortcuts)
 
 Security scripts:
 
