@@ -112,12 +112,51 @@ This guide helps Tenant Admins and Platform Admins configure, operate, and gover
 
 ---
 
+## 6A) Authentication Provider Administration
+
+### Supported enterprise auth integrations
+- OIDC, OAuth2, SAML (with federation adapters where needed)
+- SCIM provisioning/deprovisioning for supported providers
+
+### Admin steps
+1. Select provider from auth catalog.
+2. Configure metadata (issuer/entity ID, endpoints, certificates/keys).
+3. Configure claims-to-role mapping.
+4. Configure login routing policy and fallback provider.
+5. Validate sign-in flow for each role type.
+
+### Known provider baseline
+- Microsoft Entra ID, Okta, Auth0, Ping Identity, Google Cloud Identity,
+  AWS IAM Identity Center, OneLogin, IBM Security Verify, Oracle IDCS,
+  Salesforce Identity, CyberArk Identity, ADFS, Shibboleth, Keycloak.
+
+---
+
+## 6B) Source Sync Connector Administration (HR + IAM)
+
+### Source categories
+- HR sources: Workday, SAP SuccessFactors, Oracle HCM, ADP, UKG, Dayforce, BambooHR, HiBob
+- IAM directories: Entra ID/AD, Okta/Auth0, Ping, Google, AWS IAM Identity Center, OneLogin, IBM, ForgeRock/Keycloak
+
+### Admin steps
+1. Create sync connector and source credentials reference.
+2. Choose sync mode (full/delta/event/scheduled).
+3. Configure filters and inclusion policy.
+4. Run dry-run and inspect impact report.
+5. Activate sync and monitor job health.
+
+---
+
 ## 7) Secrets Administration
 
 - Register external secret provider.
 - Store references only (`secret://provider/path`) in platform records.
 - Configure secret rotation cadence.
 - Validate downstream vendor connectivity after secret rotation events.
+
+For auth and sync integrations:
+- store IdP and source-system credentials only as external secret references.
+- rotate and revalidate trust/certificates according to policy.
 
 ---
 
@@ -174,3 +213,8 @@ Enable relevant frameworks:
 - Integrate incidents with ticketing platform.
 - Use change approvals for policy, workflow, and connector promotions.
 - Record all high-impact changes with rollback plans and evidence.
+
+Include:
+- auth provider change approvals (metadata/certificate/claim mappings)
+- source sync filter changes and precedence policy changes
+- instance promotion changes (non-prod to prod) with approvals

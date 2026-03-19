@@ -3,7 +3,9 @@
 ## Phase 1: Platform Foundation
 
 - Tenant and identity model (SSO + RBAC/ABAC)
+- Enterprise IdP federation broker foundation (OIDC/SAML/OAuth2)
 - Application registry API
+- Application instance API model (dev/test/prod under parent app)
 - Questionnaire template + instance APIs
 - Workflow engine MVP (approval + escalation + delegation)
 - Immutable audit event pipeline
@@ -22,6 +24,8 @@ Deliverables:
 ## Phase 2: Integration and Connector Automation
 
 - Connector catalog service
+- Authentication provider catalog service
+- Source sync connector catalog service (HR + IAM + app metadata)
 - OOTB connector matching logic
 - Custom connector scaffold generator
 - Web services fallback template generator
@@ -31,6 +35,7 @@ Deliverables:
 Deliverables:
 - End-to-end onboarding execution into at least one target vendor per domain
 - Connector strategy traceability and operational dashboards
+- User and app metadata sync pipelines from connected source systems
 
 ---
 

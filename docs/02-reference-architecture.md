@@ -11,6 +11,8 @@ flowchart LR
   APIGW --> INT[Integration Orchestrator]
   APIGW --> LOC[Localization Service]
   APIGW --> COMP[Compliance Service]
+  APIGW --> IDP[Identity Federation Broker]
+  APIGW --> SYNC[Directory and HR Sync Service]
 
   CORE --> WF[Workflow Engine]
   CORE --> Q[Questionnaire Engine]
@@ -86,6 +88,12 @@ flowchart LR
 10. **Compliance Domain**
    - Control library, policy mapping, evidence collection, compliance reporting
 
+11. **Identity Federation Domain**
+   - Enterprise IdP integrations, login policy routing, token trust management
+
+12. **Source Sync Domain**
+   - HR/IAM connector orchestration, user/group/app metadata ingestion, conflict resolution
+
 ---
 
 ## Canonical Data Model (Simplified)
@@ -98,6 +106,8 @@ flowchart LR
   - id, tenantId, name, owner, businessCriticality, dataClassification
 - `ApplicationEnvironment`
   - id, applicationId, envName, endpoint, authType, schemaRef
+- `ApplicationInstance`
+  - id, applicationId, instanceName, environmentType, endpoint, connectorProfileId, secretRef
 - `QuestionnaireTemplate`
   - id, version, sectionRules, scoringRules
 - `QuestionnaireInstance`
@@ -120,6 +130,12 @@ flowchart LR
   - id, userId, keyboardMode, reducedMotion, contrastMode
 - `ComplianceControl`
   - id, framework, controlId, statement, evidenceRules, owner
+- `AuthProviderConfig`
+  - id, tenantId, providerType, protocol, status, priority
+- `SyncConnectorConfig`
+  - id, tenantId, sourceType, provider, mode, filterPolicy, status
+- `SyncJob`
+  - id, connectorId, runType, startedAt, completedAt, status, stats
 
 ---
 
@@ -148,6 +164,32 @@ flowchart LR
 - End-to-end audit immutability with integrity checks
 - Data minimization and purpose-limitation enforcement
 - Privacy-by-design controls for regulated data classes
+- Token validation and audience enforcement for federated identities
+- Per-tenant IdP trust store and certificate rotation workflow
+
+---
+
+## Identity Federation Architecture
+
+- Identity federation broker supports OIDC/SAML/OAuth2-based inbound authentication.
+- Tenant-specific auth policy can route users to configured enterprise IdP.
+- Optional fallback IdP for continuity during provider outage.
+- SCIM integration supports identity lifecycle synchronization and deprovisioning.
+- Group and claim mapping pipeline maps external attributes to internal RBAC/ABAC controls.
+
+---
+
+## HR and IAM Source Sync Architecture
+
+- Connector framework supports HR and IAM source systems as inbound authoritative feeds.
+- Sync modes:
+  - scheduled batch,
+  - event-driven,
+  - delta incremental,
+  - full reconciliation.
+- Ingestion pipeline performs normalization into canonical user and application metadata schemas.
+- Conflict resolver applies source precedence and timestamp-aware merge policy.
+- Sync changes are emitted as auditable domain events with rollback checkpoints.
 
 ---
 

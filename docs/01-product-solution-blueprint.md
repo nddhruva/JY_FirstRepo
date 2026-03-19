@@ -17,6 +17,9 @@ The platform must support:
 - Internationalization (i18n) and localization (l10n) by design
 - Keyboard-only operation for all critical user journeys
 - Compliance-by-design aligned to major standards and regulations
+- Enterprise IdP authentication integration coverage (IAM/CIAM/SSO/Federation)
+- HR and IAM source synchronization for users and application metadata
+- Multi-instance application model (non-prod/prod under one application umbrella)
 
 ---
 
@@ -180,6 +183,27 @@ The platform must support:
 - Data classification, retention, and consent management controls
 - Continuous control monitoring and evidence generation
 - Tenant-level compliance reporting packs for audits
+
+### 16) Enterprise Authentication Integrations
+
+- Tenant-scoped SSO integration with known IAM/CIAM/SSO/Federation vendors
+- OIDC/SAML/OAuth2 and federation adapter support
+- Primary/fallback IdP configuration with policy-based routing
+- SCIM/LDAP bridge support for lifecycle and directory interoperability
+
+### 17) Source Sync Integrations (HR + IAM + App Metadata)
+
+- User lifecycle sync from HR authoritative systems
+- Identity/group sync from IAM/CIAM/SSO directories
+- Application metadata sync from IAM tools, CMDB, and data lakes
+- Full/delta/event-driven sync modes with filtering and dry-run support
+
+### 18) Multi-Instance Application Support
+
+- Multiple instances (dev/test/stage/prod) under a single parent application record
+- Instance-specific endpoints, credentials, connector mappings, and onboarding status
+- Promotion-aware workflows between non-prod and prod instances
+- Parent roll-up reporting across all instance lifecycles
 
 ---
 

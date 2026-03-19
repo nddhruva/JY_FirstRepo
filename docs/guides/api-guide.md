@@ -79,7 +79,61 @@ Use recommended flow:
 
 ---
 
-## 5) Localization APIs
+## 5) Identity Authentication Integration APIs
+
+### Auth Provider Catalog
+`GET /integrations/auth-providers/catalog`
+
+### Configure Tenant Auth Provider
+`POST /integrations/auth-providers`
+
+### List Tenant Auth Providers
+`GET /integrations/auth-providers`
+
+### Update Auth Provider
+`PATCH /integrations/auth-providers/{providerConfigId}`
+
+Use these APIs to integrate tenant authentication with enterprise IAM/CIAM/SSO/Federation products.
+
+---
+
+## 6) Source Sync APIs (HR + IAM + App Metadata)
+
+### Source Connector Catalog
+`GET /integrations/sync/connectors/catalog`
+
+### Configure Source Sync Connector
+`POST /integrations/sync/connectors`
+
+### List Configured Sync Connectors
+`GET /integrations/sync/connectors`
+
+### Run Sync Job
+`POST /integrations/sync/jobs/run`
+
+### Get Sync Job Status
+`GET /integrations/sync/jobs/{jobId}`
+
+These APIs support importing filtered or full users, group membership, and application metadata from connected sources.
+
+---
+
+## 7) Application Instance APIs
+
+### Create Instance Under Parent Application
+`POST /applications/{applicationId}/instances`
+
+### List Instances
+`GET /applications/{applicationId}/instances`
+
+### Update Instance
+`PATCH /applications/{applicationId}/instances/{instanceId}`
+
+Use instances to model non-prod and prod under one parent application.
+
+---
+
+## 8) Localization APIs
 
 ### List Supported Locales
 `GET /i18n/locales`
@@ -110,7 +164,7 @@ Typical fields:
 
 ---
 
-## 7) Compliance APIs
+## 9) Accessibility APIs
 
 ### List Frameworks
 `GET /compliance/frameworks`
@@ -122,7 +176,7 @@ Use these APIs to automate audit pack generation for enabled frameworks.
 
 ---
 
-## 8) Consent and Provider Access
+## 10) Compliance APIs
 
 ### Request Access
 `POST /consent/provider-access`
@@ -138,7 +192,7 @@ All provider-side data access is:
 
 ---
 
-## 9) Error Model and Retries
+## 11) Consent and Provider Access
 
 Use consistent error handling:
 - `400` validation failure
@@ -155,7 +209,7 @@ Retry guidance:
 
 ---
 
-## 10) Versioning and Compatibility
+## 12) Error Model and Retries
 
 - API version is path-based (`/v1`).
 - Backward-compatible changes:
@@ -165,13 +219,21 @@ Retry guidance:
 
 ---
 
-## 11) Example Onboarding Sequence
+## 13) Versioning and Compatibility
+
+---
+
+## 14) Example Onboarding Sequence
 
 1. `POST /applications`
-2. `POST /applications/{applicationId}/ingest`
-3. `POST /applications/{applicationId}/questionnaires/assign`
-4. `POST /applications/{applicationId}/onboarding/plan`
-5. `POST /applications/{applicationId}/onboarding/execute`
-6. `POST /exports/configuration`
+2. `POST /applications/{applicationId}/instances`
+3. `POST /integrations/auth-providers`
+4. `POST /integrations/sync/connectors`
+5. `POST /integrations/sync/jobs/run`
+6. `POST /applications/{applicationId}/ingest`
+7. `POST /applications/{applicationId}/questionnaires/assign`
+8. `POST /applications/{applicationId}/onboarding/plan`
+9. `POST /applications/{applicationId}/onboarding/execute`
+10. `POST /exports/configuration`
 
 This sequence allows full API-based onboarding with no mandatory UI usage.

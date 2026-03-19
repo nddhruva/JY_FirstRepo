@@ -12,12 +12,14 @@
 
 ## 1) Getting Started
 
-1. Sign in with your organization SSO.
+1. Sign in with your organization SSO or federated IdP configured by your tenant.
 2. Set profile preferences:
    - language/locale
    - timezone
    - accessibility preferences (keyboard mode, contrast, reduced motion)
 3. Open **My Tasks** to view assigned onboarding items.
+
+If your tenant has multiple configured IdPs, login may route automatically based on policy.
 
 ---
 
@@ -35,6 +37,9 @@
    - data lake import
    - API-submitted data
 4. Submit the onboarding request.
+
+Optional:
+- add one or more application instances (for example DEV/UAT/PROD) during creation, or after creation from Application 360.
 
 ---
 
@@ -75,6 +80,11 @@ When onboarding reaches integration stage:
 2. Review rationale and confidence score.
 3. Validate connector mapping and prerequisites.
 4. Trigger onboarding execution when approvals are complete.
+
+For multi-instance applications:
+- execute onboarding separately per instance,
+- validate non-prod instances first,
+- then promote to production with approvals.
 
 ---
 

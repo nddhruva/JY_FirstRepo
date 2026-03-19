@@ -32,6 +32,9 @@ The solution is designed to be:
 - `docs/04-rbac-workflows-ai.md`  
   Role model, configurable workflow model, AI feature set, and governance controls.
 
+- `docs/08-identity-auth-and-sync-integrations.md`  
+  Identity authentication integrations, user/app sync connectors, and multi-instance application onboarding model.
+
 - `docs/guides/admin-guide.md`  
   Tenant/platform administration, policy configuration, connectors, and governance operations.
 

@@ -38,6 +38,12 @@
 11. **Compliance Manager**
    - Owns control attestations, evidence completeness, and compliance reports
 
+12. **Identity Integration Admin**
+   - Configures enterprise authentication providers and claim mappings
+
+13. **Sync Integration Admin**
+   - Configures HR/IAM source connectors, filters, and sync schedules
+
 ---
 
 ## Permission Strategy

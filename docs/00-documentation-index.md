@@ -11,6 +11,7 @@ This index provides the complete documentation set for the Application Onboardin
 - `05-integration-playbook.md` - OOTB -> custom -> web services onboarding strategy.
 - `06-ui-ux-experience.md` - Enterprise UX and accessibility direction.
 - `07-implementation-roadmap.md` - Phased delivery sequence and engineering guardrails.
+- `08-identity-auth-and-sync-integrations.md` - Identity provider integrations, source-system sync, and application instance strategy.
 
 ## Product Guides
 
@@ -29,7 +30,7 @@ This index provides the complete documentation set for the Application Onboardin
 ## Intended Audiences
 
 - **Product owner / sponsors**: 01, 07, compliance/*
-- **Architecture and engineering**: 02, 03, 04, 05, guides/api-guide.md
+- **Architecture and engineering**: 02, 03, 04, 05, 08, guides/api-guide.md
 - **Admins and operators**: guides/admin-guide.md, guides/localization-i18n-guide.md
 - **Business users and onboarding stakeholders**: guides/user-guide.md
 - **Design and QA teams**: 06, guides/keyboard-accessibility-guide.md

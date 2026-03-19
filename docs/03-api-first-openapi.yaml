@@ -16,6 +16,8 @@ tags:
   - name: Onboarding
   - name: Exports
   - name: Consent
+  - name: Identity
+  - name: Sync
   - name: Localization
   - name: Accessibility
   - name: Compliance
@@ -99,6 +101,67 @@ paths:
       responses:
         '202':
           description: Ingest accepted
+
+  /applications/{applicationId}/instances:
+    get:
+      tags: [Applications]
+      summary: List instances under a parent application
+      operationId: listApplicationInstances
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+      responses:
+        '200':
+          description: Application instance list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApplicationInstance'
+    post:
+      tags: [Applications]
+      summary: Create an instance under a parent application
+      operationId: createApplicationInstance
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApplicationInstanceRequest'
+      responses:
+        '201':
+          description: Application instance created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationInstance'
+
+  /applications/{applicationId}/instances/{instanceId}:
+    patch:
+      tags: [Applications]
+      summary: Update application instance details
+      operationId: updateApplicationInstance
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+        - $ref: '#/components/parameters/InstanceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateApplicationInstanceRequest'
+      responses:
+        '200':
+          description: Application instance updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationInstance'
 
   /applications/{applicationId}/questionnaires/assign:
     post:
@@ -273,6 +336,167 @@ paths:
         '200':
           description: Decision recorded
 
+  /integrations/auth-providers/catalog:
+    get:
+      tags: [Identity]
+      summary: List known enterprise authentication provider catalog entries
+      operationId: listAuthProviderCatalog
+      responses:
+        '200':
+          description: Auth provider catalog
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuthProviderCatalogEntry'
+
+  /integrations/auth-providers:
+    post:
+      tags: [Identity]
+      summary: Configure tenant authentication provider integration
+      operationId: createAuthProviderConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAuthProviderConfigRequest'
+      responses:
+        '201':
+          description: Auth provider configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthProviderConfig'
+    get:
+      tags: [Identity]
+      summary: List configured authentication providers for tenant
+      operationId: listAuthProviderConfigs
+      responses:
+        '200':
+          description: Auth provider configuration list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuthProviderConfig'
+
+  /integrations/auth-providers/{providerConfigId}:
+    patch:
+      tags: [Identity]
+      summary: Update tenant authentication provider configuration
+      operationId: updateAuthProviderConfig
+      parameters:
+        - $ref: '#/components/parameters/ProviderConfigId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAuthProviderConfigRequest'
+      responses:
+        '200':
+          description: Auth provider configuration updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthProviderConfig'
+
+  /integrations/sync/connectors/catalog:
+    get:
+      tags: [Sync]
+      summary: List known source sync connector catalog entries
+      operationId: listSyncConnectorCatalog
+      responses:
+        '200':
+          description: Sync connector catalog
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SyncConnectorCatalogEntry'
+
+  /integrations/sync/connectors:
+    post:
+      tags: [Sync]
+      summary: Configure source sync connector for HR or IAM source systems
+      operationId: createSyncConnectorConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSyncConnectorConfigRequest'
+      responses:
+        '201':
+          description: Sync connector configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncConnectorConfig'
+    get:
+      tags: [Sync]
+      summary: List configured source sync connectors
+      operationId: listSyncConnectorConfigs
+      responses:
+        '200':
+          description: Sync connector configuration list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SyncConnectorConfig'
+
+  /integrations/sync/jobs/run:
+    post:
+      tags: [Sync]
+      summary: Execute a source sync job
+      operationId: runSyncJob
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunSyncJobRequest'
+      responses:
+        '202':
+          description: Sync job started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncJobResponse'
+
+  /integrations/sync/jobs/{jobId}:
+    get:
+      tags: [Sync]
+      summary: Get source sync job status
+      operationId: getSyncJobStatus
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Sync job status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncJobResponse'
+
   /i18n/locales:
     get:
       tags: [Localization]
@@ -398,6 +622,27 @@ components:
       schema:
         type: string
         format: uuid
+    InstanceId:
+      in: path
+      name: instanceId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ProviderConfigId:
+      in: path
+      name: providerConfigId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    JobId:
+      in: path
+      name: jobId
+      required: true
+      schema:
+        type: string
+        format: uuid
     AcceptLanguage:
       in: header
       name: Accept-Language
@@ -439,6 +684,10 @@ components:
         businessCriticality: { type: string, enum: [low, medium, high, critical] }
         dataClassification: { type: string, enum: [public, internal, confidential, restricted] }
         status: { type: string }
+        instances:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApplicationInstance'
       required: [id, tenantId, name, businessCriticality, dataClassification]
     CreateApplicationRequest:
       type: object
@@ -457,7 +706,55 @@ components:
                 enum: [IGA, IAM, PAM, SSO]
               vendor: { type: string }
               product: { type: string }
+        instances:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateApplicationInstanceRequest'
       required: [tenantId, name, businessCriticality, dataClassification]
+    ApplicationInstance:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        applicationId: { type: string, format: uuid }
+        instanceName: { type: string, example: PROD }
+        environmentType: { type: string, enum: [dev, test, uat, stage, prod, other] }
+        endpoint: { type: string }
+        region: { type: string }
+        connectorProfileId: { type: string, format: uuid }
+        secretReference:
+          type: object
+          properties:
+            provider: { type: string, enum: [vault, aws_sm, azure_kv, gcp_sm] }
+            path: { type: string }
+        status: { type: string, enum: [draft, ready, onboarded, failed] }
+      required: [id, applicationId, instanceName, environmentType]
+    CreateApplicationInstanceRequest:
+      type: object
+      properties:
+        instanceName: { type: string, example: PROD }
+        environmentType: { type: string, enum: [dev, test, uat, stage, prod, other] }
+        endpoint: { type: string }
+        region: { type: string }
+        connectorProfileId: { type: string, format: uuid }
+        secretReference:
+          type: object
+          properties:
+            provider: { type: string, enum: [vault, aws_sm, azure_kv, gcp_sm] }
+            path: { type: string }
+      required: [instanceName, environmentType]
+    UpdateApplicationInstanceRequest:
+      type: object
+      properties:
+        instanceName: { type: string }
+        environmentType: { type: string, enum: [dev, test, uat, stage, prod, other] }
+        endpoint: { type: string }
+        region: { type: string }
+        connectorProfileId: { type: string, format: uuid }
+        secretReference:
+          type: object
+          properties:
+            provider: { type: string, enum: [vault, aws_sm, azure_kv, gcp_sm] }
+            path: { type: string }
     IngestRequest:
       type: object
       properties:
@@ -643,6 +940,128 @@ components:
         decidedBy: { type: string, format: uuid }
         reason: { type: string }
       required: [requestId, decision, decidedBy]
+    AuthProviderCatalogEntry:
+      type: object
+      properties:
+        id: { type: string }
+        providerName: { type: string }
+        providerCategory: { type: string, enum: [iam, ciam, sso, federation] }
+        supportedProtocols:
+          type: array
+          items: { type: string, enum: [OIDC, SAML, OAUTH2, WS_FED, SCIM] }
+        status: { type: string, enum: [active, beta, deprecated] }
+      required: [id, providerName, providerCategory, supportedProtocols, status]
+    AuthProviderConfig:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        providerName: { type: string }
+        protocol: { type: string, enum: [OIDC, SAML, OAUTH2, WS_FED] }
+        isPrimary: { type: boolean, default: false }
+        isFallback: { type: boolean, default: false }
+        loginPolicy: { type: string, enum: [always, domain_routed, group_routed] }
+        status: { type: string, enum: [active, disabled, testing] }
+      required: [id, tenantId, providerName, protocol, status]
+    CreateAuthProviderConfigRequest:
+      type: object
+      properties:
+        tenantId: { type: string, format: uuid }
+        providerName: { type: string }
+        protocol: { type: string, enum: [OIDC, SAML, OAUTH2, WS_FED] }
+        metadata:
+          type: object
+          additionalProperties: true
+        claimMapping:
+          type: object
+          additionalProperties: true
+        isPrimary: { type: boolean, default: false }
+        isFallback: { type: boolean, default: false }
+        loginPolicy: { type: string, enum: [always, domain_routed, group_routed] }
+      required: [tenantId, providerName, protocol, metadata]
+    UpdateAuthProviderConfigRequest:
+      type: object
+      properties:
+        metadata:
+          type: object
+          additionalProperties: true
+        claimMapping:
+          type: object
+          additionalProperties: true
+        isPrimary: { type: boolean }
+        isFallback: { type: boolean }
+        loginPolicy: { type: string, enum: [always, domain_routed, group_routed] }
+        status: { type: string, enum: [active, disabled, testing] }
+    SyncConnectorCatalogEntry:
+      type: object
+      properties:
+        id: { type: string }
+        sourceCategory: { type: string, enum: [hr, iam, ciam, sso, federation, cmdb, data_lake] }
+        providerName: { type: string }
+        supportedSyncModes:
+          type: array
+          items: { type: string, enum: [full, delta, event, scheduled] }
+        supportedObjects:
+          type: array
+          items: { type: string, enum: [users, groups, applications, ownership, employment] }
+        status: { type: string, enum: [active, beta, deprecated] }
+      required: [id, sourceCategory, providerName, supportedSyncModes, supportedObjects, status]
+    SyncConnectorConfig:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        sourceCategory: { type: string, enum: [hr, iam, ciam, sso, federation, cmdb, data_lake] }
+        providerName: { type: string }
+        syncMode: { type: string, enum: [full, delta, event, scheduled] }
+        includeObjects:
+          type: array
+          items: { type: string, enum: [users, groups, applications, ownership, employment] }
+        filterPolicy:
+          type: object
+          additionalProperties: true
+        status: { type: string, enum: [active, disabled, testing] }
+      required: [id, tenantId, sourceCategory, providerName, syncMode, includeObjects, status]
+    CreateSyncConnectorConfigRequest:
+      type: object
+      properties:
+        tenantId: { type: string, format: uuid }
+        sourceCategory: { type: string, enum: [hr, iam, ciam, sso, federation, cmdb, data_lake] }
+        providerName: { type: string }
+        syncMode: { type: string, enum: [full, delta, event, scheduled] }
+        includeObjects:
+          type: array
+          items: { type: string, enum: [users, groups, applications, ownership, employment] }
+        filterPolicy:
+          type: object
+          additionalProperties: true
+        credentialReference:
+          type: object
+          properties:
+            provider: { type: string, enum: [vault, aws_sm, azure_kv, gcp_sm] }
+            path: { type: string }
+      required: [tenantId, sourceCategory, providerName, syncMode, includeObjects]
+    RunSyncJobRequest:
+      type: object
+      properties:
+        connectorId: { type: string, format: uuid }
+        runType: { type: string, enum: [manual, scheduled, event] }
+        dryRun: { type: boolean, default: false }
+      required: [connectorId, runType]
+    SyncJobResponse:
+      type: object
+      properties:
+        jobId: { type: string, format: uuid }
+        connectorId: { type: string, format: uuid }
+        runType: { type: string, enum: [manual, scheduled, event] }
+        status: { type: string, enum: [queued, running, completed, failed] }
+        stats:
+          type: object
+          properties:
+            usersProcessed: { type: integer, default: 0 }
+            applicationsProcessed: { type: integer, default: 0 }
+            errors: { type: integer, default: 0 }
+      required: [jobId, connectorId, runType, status]
     LocaleInfo:
       type: object
       properties:

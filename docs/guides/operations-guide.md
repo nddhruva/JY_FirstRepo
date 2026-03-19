@@ -12,6 +12,8 @@ Monitor:
 - API availability and latency
 - workflow queue depth and SLA breaches
 - connector execution success/failure rates
+- identity provider login success and federation errors
+- source sync job throughput, failures, and lag
 - secrets broker errors
 - translation service cache health
 - accessibility preference service availability
