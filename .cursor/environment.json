@@ -1,0 +1,15 @@
+{
+  "install": "bash .cursor/install.sh",
+  "start": "bash .cursor/start.sh",
+  "env": {
+    "PYTHONPATH": "/workspace/src",
+    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONUNBUFFERED": "1"
+  },
+  "persistedDirectories": [
+    "/workspace/.venv",
+    "/workspace/.pytest_cache",
+    "/home/ubuntu/.cache/pip"
+  ]
+}

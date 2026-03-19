@@ -38,6 +38,9 @@ The solution is designed to be:
 - `docs/09-mvp-implementation-status.md`  
   Status of the runnable backend MVP implementation and covered capabilities.
 
+- `docs/10-cloud-environment-setup.md`  
+  Cloud agent environment configuration for preinstalled Python tooling and optimized pytest/uvicorn startup.
+
 - `docs/guides/admin-guide.md`  
   Tenant/platform administration, policy configuration, connectors, and governance operations.
 
@@ -95,3 +98,24 @@ python3 -m uvicorn aop_api.main:app --app-dir src --host 0.0.0.0 --port 8000
 ```bash
 python3 -m pytest -q
 ```
+
+## Cloud Agent Environment Config
+
+Repository-level cloud environment bootstrap is configured at:
+
+- `.cursor/environment.json`
+
+Supporting scripts:
+
+- `.cursor/install.sh` - idempotent dependency install into `/workspace/.venv`
+- `.cursor/start.sh` - startup preflight and runtime environment setup
+- `scripts/run-tests.sh` - optimized test runner wrapper
+- `scripts/run-api.sh` - optimized uvicorn runner wrapper
+
+These settings preinstall and validate the AOP FastAPI MVP dependencies:
+
+- fastapi
+- pydantic
+- uvicorn
+- pytest
+- httpx

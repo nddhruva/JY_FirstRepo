@@ -13,6 +13,7 @@ This index provides the complete documentation set for the Application Onboardin
 - `07-implementation-roadmap.md` - Phased delivery sequence and engineering guardrails.
 - `08-identity-auth-and-sync-integrations.md` - Identity provider integrations, source-system sync, and application instance strategy.
 - `09-mvp-implementation-status.md` - Implemented backend scope, tests, and near-term productionization steps.
+- `10-cloud-environment-setup.md` - Cloud agent bootstrap and startup optimization for pytest and uvicorn.
 
 ## Product Guides
 
