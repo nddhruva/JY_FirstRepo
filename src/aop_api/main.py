@@ -7,7 +7,7 @@ import re
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, UploadFile, status
-from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session, selectinload
 
@@ -200,6 +200,14 @@ app = FastAPI(
     version="0.2.0",
     summary="Production-oriented API-first onboarding for IGA/IAM/PAM/SSO",
     lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins or ["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 

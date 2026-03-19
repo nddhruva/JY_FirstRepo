@@ -17,11 +17,13 @@ Ensure cloud agents start with Python 3 tooling and all AOP FastAPI MVP dependen
   - Falls back to user-site Python installs when venv tooling is unavailable
   - Installs `requirements.txt`
   - Installs dev extras from `pyproject.toml` (`.[dev]`)
+  - Installs frontend dependencies when `frontend/package.json` exists
 
 - `.cursor/start.sh`
   - Activates `.venv` when present
   - Exports `PYTHONPATH` for package discovery
   - Performs dependency preflight import checks
+  - Ensures frontend `node_modules` exist for UI workflows
 
 ## Optimized Developer Commands
 

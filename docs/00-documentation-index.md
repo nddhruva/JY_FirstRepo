@@ -16,6 +16,7 @@ This index provides the complete documentation set for the Application Onboardin
 - `10-cloud-environment-setup.md` - Cloud agent bootstrap and startup optimization for pytest and uvicorn.
 - `11-database-and-security-hardening.md` - Production persistence portability, Alembic migration model, JWT auth, and policy enforcement.
 - `12-ui-branding-dashboard-reporting-security.md` - Branding, dashboard customization, AI-driven reporting, and security quality controls.
+- `13-frontend-ui-layer.md` - Implemented React frontend for branding, dashboard composition, analytics, and report design.
 
 ## Product Guides
 

@@ -10,6 +10,7 @@
   "persistedDirectories": [
     "/workspace/.venv",
     "/workspace/.audit-venv",
+    "/workspace/frontend/node_modules",
     "/workspace/.pytest_cache",
     "/home/ubuntu/.cache/pip"
   ]

@@ -29,3 +29,7 @@ fi
 "$PYTHON_BIN" -m pip install --upgrade pip
 "$PYTHON_BIN" -m pip install -r requirements.txt
 "$PYTHON_BIN" -m pip install -e ".[dev]"
+
+if command -v npm >/dev/null 2>&1 && [ -f "frontend/package.json" ]; then
+  npm --prefix frontend install
+fi

@@ -26,9 +26,12 @@ class Settings:
     graph_database_url: str | None
     upload_dir: str
     max_upload_bytes: int
+    cors_origins: list[str]
 
 
 def get_settings() -> Settings:
+    cors_raw = getenv("AOP_CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
+    cors_origins = [item.strip() for item in cors_raw.split(",") if item.strip()]
     return Settings(
         database_url=getenv("AOP_DATABASE_URL", "sqlite+pysqlite:///./aop.db"),
         jwt_secret_key=getenv("AOP_JWT_SECRET_KEY", "change-me-in-production"),
@@ -39,6 +42,7 @@ def get_settings() -> Settings:
         graph_database_url=getenv("AOP_GRAPH_DATABASE_URL"),
         upload_dir=getenv("AOP_UPLOAD_DIR", "./uploads"),
         max_upload_bytes=int(getenv("AOP_MAX_UPLOAD_BYTES", str(5 * 1024 * 1024))),
+        cors_origins=cors_origins,
     )
 
 

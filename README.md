@@ -47,6 +47,9 @@ The solution is designed to be:
 - `docs/12-ui-branding-dashboard-reporting-security.md`  
   Branding customization, intuitive dashboard/reporting UX capabilities, and security testing controls.
 
+- `docs/13-frontend-ui-layer.md`  
+  Implemented frontend UI layer with theme editor, drag/drop dashboard builder, and report designer.
+
 - `docs/guides/admin-guide.md`  
   Tenant/platform administration, policy configuration, connectors, and governance operations.
 
@@ -133,6 +136,15 @@ Authorization: Bearer <token>
 
 ```bash
 python3 -m pytest -q
+```
+
+### Run frontend UI
+
+```bash
+cd frontend
+cp .env.example .env
+npm install
+npm run dev
 ```
 
 ## Cloud Agent Environment Config

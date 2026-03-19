@@ -26,3 +26,9 @@ if missing:
     raise SystemExit(f"Missing dependencies after startup: {', '.join(missing)}")
 print("AOP cloud environment ready.")
 PY
+
+if command -v npm >/dev/null 2>&1 && [ -f "frontend/package.json" ]; then
+  if [ ! -d "frontend/node_modules" ]; then
+    npm --prefix frontend install >/dev/null
+  fi
+fi

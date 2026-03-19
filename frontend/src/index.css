@@ -1,0 +1,482 @@
+:root {
+  --brand-primary: #304ffe;
+  --brand-secondary: #00c853;
+  --brand-accent: #aa3bff;
+  --brand-surface: #ffffff;
+  --brand-text: #101828;
+  --font-primary: Inter, system-ui, sans-serif;
+  --font-heading: Poppins, Inter, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --app-background-image: none;
+  --border: #d0d7e5;
+  --shadow: 0 15px 45px rgba(0, 0, 0, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-primary);
+  color: var(--brand-text);
+  background:
+    linear-gradient(180deg, rgba(48, 79, 254, 0.08) 0%, rgba(255, 255, 255, 0.95) 24%),
+    var(--app-background-image);
+  background-size: cover;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app-shell {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--brand-surface) 88%, white);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+.topbar h1 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: clamp(1.5rem, 2.8vw, 2.35rem);
+}
+
+.topbar p {
+  margin: 0.3rem 0 0;
+  color: color-mix(in srgb, var(--brand-text) 70%, #fff);
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.topbar-actions input {
+  width: min(360px, 58vw);
+}
+
+.content {
+  margin-top: 1rem;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: 270px 1fr;
+  gap: 1rem;
+}
+
+.sidebar {
+  padding: 1rem;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--brand-surface) 94%, #fff);
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 1rem;
+  height: fit-content;
+}
+
+.sidebar h3 {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-heading);
+}
+
+.sidebar button {
+  width: 100%;
+  text-align: left;
+  margin-bottom: 0.5rem;
+}
+
+.sidebar button.active {
+  background: color-mix(in srgb, var(--brand-primary) 82%, #fff);
+  color: #fff;
+}
+
+.meta-card {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--brand-surface) 85%, #f2f5fb);
+}
+
+.meta-card h4 {
+  margin: 0 0 0.4rem;
+  font-family: var(--font-heading);
+}
+
+.meta-card ul {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.workspace-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.workspace-main > h2 {
+  margin: 0.4rem 0 0;
+  font-family: var(--font-heading);
+}
+
+.panel {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--brand-surface) 94%, #fff);
+  box-shadow: var(--shadow);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.panel-header h2 {
+  margin: 0;
+  font-family: var(--font-heading);
+}
+
+.helper-text {
+  color: color-mix(in srgb, var(--brand-text) 72%, #ffffff);
+  margin: 0.45rem 0 0.8rem;
+}
+
+.grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.grid.two-col {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.95rem;
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
+input,
+select,
+textarea {
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  padding: 0.6rem 0.75rem;
+  background: #fff;
+}
+
+textarea {
+  resize: vertical;
+}
+
+button {
+  border: 0;
+  border-radius: 10px;
+  padding: 0.56rem 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--brand-primary);
+  color: #fff;
+}
+
+button:hover {
+  filter: brightness(1.05);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.ghost {
+  background: transparent;
+  color: var(--brand-primary);
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 40%, #fff);
+}
+
+.row {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 1rem 0;
+}
+
+.auth-panel {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.color-input {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.color-input input[type='color'] {
+  width: 56px;
+  min-width: 56px;
+  height: 40px;
+  padding: 0.2rem;
+}
+
+.upload-row {
+  display: grid;
+  grid-template-columns: 170px 1fr auto;
+  gap: 0.65rem;
+  margin-top: 0.8rem;
+}
+
+.widget-library {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.8rem;
+}
+
+.widget-library button {
+  background: color-mix(in srgb, var(--brand-secondary) 80%, #fff);
+}
+
+.widget-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.widget-item {
+  display: grid;
+  grid-template-columns: 26px 1fr auto;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.66rem 0.78rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #fff;
+}
+
+.widget-drag-handle {
+  cursor: grab;
+  user-select: none;
+  color: color-mix(in srgb, var(--brand-text) 55%, #fff);
+}
+
+.widget-meta {
+  margin: 0.2rem 0 0;
+  color: color-mix(in srgb, var(--brand-text) 65%, #fff);
+}
+
+.analytics-grid {
+  margin-top: 0.8rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.chart-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.8rem;
+  background: #fff;
+}
+
+.chart-card h3 {
+  margin: 0;
+  font-family: var(--font-heading);
+}
+
+.chart-subtitle {
+  margin: 0.4rem 0 0.25rem;
+}
+
+.focus-list {
+  margin-top: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.8rem;
+  background: #fff;
+}
+
+.focus-list h3 {
+  margin: 0 0 0.55rem;
+  font-family: var(--font-heading);
+}
+
+.focus-list ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0.8rem;
+}
+
+.segmented button {
+  background: color-mix(in srgb, var(--brand-primary) 18%, #fff);
+  color: var(--brand-primary);
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 22%, #fff);
+}
+
+.segmented button.active {
+  background: var(--brand-primary);
+  color: #fff;
+}
+
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.5rem;
+}
+
+.suggestions button {
+  background: color-mix(in srgb, var(--brand-accent) 18%, #fff);
+  color: color-mix(in srgb, var(--brand-accent) 68%, #000);
+}
+
+.report-layout {
+  margin-top: 0.75rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.report-summary,
+.report-chart {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.8rem;
+  background: #fff;
+}
+
+.report-summary h3,
+.report-chart h3 {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-heading);
+}
+
+.table-wrap {
+  margin-top: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.8rem;
+  overflow: auto;
+  background: #fff;
+}
+
+.table-wrap h3 {
+  margin: 0 0 0.6rem;
+  font-family: var(--font-heading);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+th,
+td {
+  border: 1px solid var(--border);
+  padding: 0.48rem 0.55rem;
+  text-align: left;
+}
+
+th {
+  background: color-mix(in srgb, var(--brand-primary) 10%, #fff);
+}
+
+.report-history {
+  margin-top: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.8rem;
+  background: #fff;
+}
+
+.report-history h3 {
+  margin: 0 0 0.45rem;
+  font-family: var(--font-heading);
+}
+
+.report-history ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.error {
+  color: #b91c1c;
+  margin-top: 0.7rem;
+}
+
+.success {
+  color: #166534;
+  margin-top: 0.7rem;
+}
+
+@media (max-width: 1180px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    position: static;
+  }
+}
+
+@media (max-width: 780px) {
+  .grid.two-col,
+  .analytics-grid,
+  .report-layout {
+    grid-template-columns: 1fr;
+  }
+  .upload-row {
+    grid-template-columns: 1fr;
+  }
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .topbar-actions {
+    width: 100%;
+  }
+  .topbar-actions input {
+    width: 100%;
+  }
+}
