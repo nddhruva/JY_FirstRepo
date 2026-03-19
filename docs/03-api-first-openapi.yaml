@@ -1,0 +1,1132 @@
+openapi: 3.1.0
+info:
+  title: Application Onboarding Platform API
+  version: 1.0.0
+  summary: API-first multi-tenant onboarding for IGA/IAM/PAM/SSO
+servers:
+  - url: https://api.aop.example.com/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: Tenants
+  - name: Applications
+  - name: Questionnaires
+  - name: Workflows
+  - name: Connectors
+  - name: Onboarding
+  - name: Exports
+  - name: Consent
+  - name: Identity
+  - name: Sync
+  - name: Localization
+  - name: Accessibility
+  - name: Compliance
+paths:
+  /tenants:
+    post:
+      tags: [Tenants]
+      summary: Create tenant
+      operationId: createTenant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTenantRequest'
+      responses:
+        '201':
+          description: Tenant created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tenant'
+
+  /applications:
+    post:
+      tags: [Applications]
+      summary: Register application for onboarding
+      operationId: createApplication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApplicationRequest'
+      responses:
+        '201':
+          description: Application created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+    get:
+      tags: [Applications]
+      summary: List tenant applications
+      operationId: listApplications
+      parameters:
+        - in: query
+          name: environment
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Application list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Application'
+
+  /applications/{applicationId}/ingest:
+    post:
+      tags: [Applications]
+      summary: Ingest data lake payload or manual intake
+      operationId: ingestApplicationData
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngestRequest'
+      responses:
+        '202':
+          description: Ingest accepted
+
+  /applications/{applicationId}/instances:
+    get:
+      tags: [Applications]
+      summary: List instances under a parent application
+      operationId: listApplicationInstances
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+      responses:
+        '200':
+          description: Application instance list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApplicationInstance'
+    post:
+      tags: [Applications]
+      summary: Create an instance under a parent application
+      operationId: createApplicationInstance
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApplicationInstanceRequest'
+      responses:
+        '201':
+          description: Application instance created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationInstance'
+
+  /applications/{applicationId}/instances/{instanceId}:
+    patch:
+      tags: [Applications]
+      summary: Update application instance details
+      operationId: updateApplicationInstance
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+        - $ref: '#/components/parameters/InstanceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateApplicationInstanceRequest'
+      responses:
+        '200':
+          description: Application instance updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationInstance'
+
+  /applications/{applicationId}/questionnaires/assign:
+    post:
+      tags: [Questionnaires]
+      summary: Generate and assign questionnaire set to stakeholders
+      operationId: assignQuestionnaires
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignQuestionnaireRequest'
+      responses:
+        '200':
+          description: Assignment complete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestionnaireAssignmentResult'
+
+  /questionnaire-templates:
+    post:
+      tags: [Questionnaires]
+      summary: Create or update questionnaire template version
+      operationId: upsertQuestionnaireTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuestionnaireTemplate'
+      responses:
+        '200':
+          description: Template upserted
+
+  /workflow-templates:
+    post:
+      tags: [Workflows]
+      summary: Create workflow template with approval/escalation/delegation rules
+      operationId: createWorkflowTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowTemplate'
+      responses:
+        '201':
+          description: Workflow template created
+
+  /applications/{applicationId}/onboarding/plan:
+    post:
+      tags: [Onboarding]
+      summary: Generate onboarding plan and connector recommendation
+      operationId: generateOnboardingPlan
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+      responses:
+        '200':
+          description: Plan generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingPlan'
+
+  /applications/{applicationId}/onboarding/execute:
+    post:
+      tags: [Onboarding]
+      summary: Execute onboarding into target vendor product
+      operationId: executeOnboarding
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecuteOnboardingRequest'
+      responses:
+        '202':
+          description: Execution started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionResponse'
+
+  /connectors/catalog/search:
+    post:
+      tags: [Connectors]
+      summary: Search OOTB connector catalog
+      operationId: searchConnectors
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectorSearchRequest'
+      responses:
+        '200':
+          description: Search result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ConnectorDefinition'
+
+  /connectors/custom/scaffold:
+    post:
+      tags: [Connectors]
+      summary: Create custom connector scaffold from application schema
+      operationId: scaffoldCustomConnector
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomConnectorScaffoldRequest'
+      responses:
+        '201':
+          description: Scaffold created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectorDefinition'
+
+  /exports/configuration:
+    post:
+      tags: [Exports]
+      summary: Export onboarding configuration package to Git/repository
+      operationId: exportConfiguration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportRequest'
+      responses:
+        '202':
+          description: Export queued
+
+  /consent/provider-access:
+    post:
+      tags: [Consent]
+      summary: Request provider-side product owner access to non-sensitive tenant data
+      operationId: requestProviderAccess
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProviderAccessRequest'
+      responses:
+        '201':
+          description: Request created
+    put:
+      tags: [Consent]
+      summary: Approve or deny provider access request
+      operationId: decideProviderAccess
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProviderAccessDecision'
+      responses:
+        '200':
+          description: Decision recorded
+
+  /integrations/auth-providers/catalog:
+    get:
+      tags: [Identity]
+      summary: List known enterprise authentication provider catalog entries
+      operationId: listAuthProviderCatalog
+      responses:
+        '200':
+          description: Auth provider catalog
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuthProviderCatalogEntry'
+
+  /integrations/auth-providers:
+    post:
+      tags: [Identity]
+      summary: Configure tenant authentication provider integration
+      operationId: createAuthProviderConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAuthProviderConfigRequest'
+      responses:
+        '201':
+          description: Auth provider configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthProviderConfig'
+    get:
+      tags: [Identity]
+      summary: List configured authentication providers for tenant
+      operationId: listAuthProviderConfigs
+      responses:
+        '200':
+          description: Auth provider configuration list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuthProviderConfig'
+
+  /integrations/auth-providers/{providerConfigId}:
+    patch:
+      tags: [Identity]
+      summary: Update tenant authentication provider configuration
+      operationId: updateAuthProviderConfig
+      parameters:
+        - $ref: '#/components/parameters/ProviderConfigId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAuthProviderConfigRequest'
+      responses:
+        '200':
+          description: Auth provider configuration updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthProviderConfig'
+
+  /integrations/sync/connectors/catalog:
+    get:
+      tags: [Sync]
+      summary: List known source sync connector catalog entries
+      operationId: listSyncConnectorCatalog
+      responses:
+        '200':
+          description: Sync connector catalog
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SyncConnectorCatalogEntry'
+
+  /integrations/sync/connectors:
+    post:
+      tags: [Sync]
+      summary: Configure source sync connector for HR or IAM source systems
+      operationId: createSyncConnectorConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSyncConnectorConfigRequest'
+      responses:
+        '201':
+          description: Sync connector configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncConnectorConfig'
+    get:
+      tags: [Sync]
+      summary: List configured source sync connectors
+      operationId: listSyncConnectorConfigs
+      responses:
+        '200':
+          description: Sync connector configuration list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SyncConnectorConfig'
+
+  /integrations/sync/jobs/run:
+    post:
+      tags: [Sync]
+      summary: Execute a source sync job
+      operationId: runSyncJob
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunSyncJobRequest'
+      responses:
+        '202':
+          description: Sync job started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncJobResponse'
+
+  /integrations/sync/jobs/{jobId}:
+    get:
+      tags: [Sync]
+      summary: Get source sync job status
+      operationId: getSyncJobStatus
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Sync job status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncJobResponse'
+
+  /i18n/locales:
+    get:
+      tags: [Localization]
+      summary: List supported product locales
+      operationId: listSupportedLocales
+      parameters:
+        - $ref: '#/components/parameters/AcceptLanguage'
+      responses:
+        '200':
+          description: Supported locales
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LocaleInfo'
+
+  /i18n/translations/{namespace}:
+    get:
+      tags: [Localization]
+      summary: Retrieve translation bundle for namespace and locale
+      operationId: getTranslationBundle
+      parameters:
+        - in: path
+          name: namespace
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: locale
+          required: true
+          schema:
+            type: string
+            example: en-US
+      responses:
+        '200':
+          description: Translation bundle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranslationBundle'
+
+  /users/me/accessibility-preferences:
+    get:
+      tags: [Accessibility]
+      summary: Get current user accessibility preferences
+      operationId: getMyAccessibilityPreferences
+      responses:
+        '200':
+          description: Accessibility preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessibilityPreferences'
+    put:
+      tags: [Accessibility]
+      summary: Update current user accessibility preferences
+      operationId: updateMyAccessibilityPreferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertAccessibilityPreferencesRequest'
+      responses:
+        '200':
+          description: Accessibility preferences updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessibilityPreferences'
+
+  /compliance/frameworks:
+    get:
+      tags: [Compliance]
+      summary: List compliance frameworks supported by control mapping
+      operationId: listComplianceFrameworks
+      responses:
+        '200':
+          description: Frameworks list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ComplianceFramework'
+
+  /compliance/reports/run:
+    post:
+      tags: [Compliance]
+      summary: Generate compliance report package for a tenant and framework
+      operationId: runComplianceReport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComplianceReportRequest'
+      responses:
+        '202':
+          description: Compliance report queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceReportResponse'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    ApplicationId:
+      in: path
+      name: applicationId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    InstanceId:
+      in: path
+      name: instanceId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ProviderConfigId:
+      in: path
+      name: providerConfigId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    JobId:
+      in: path
+      name: jobId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    AcceptLanguage:
+      in: header
+      name: Accept-Language
+      required: false
+      schema:
+        type: string
+        example: en-US
+      description: Preferred locale for localized API messages and content.
+  schemas:
+    Tenant:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        region: { type: string }
+        isolationTier: { type: string, enum: [shared, dedicated] }
+        defaultLocale: { type: string, example: en-US }
+        supportedLocales:
+          type: array
+          items: { type: string, example: en-US }
+      required: [id, name, region, isolationTier, defaultLocale]
+    CreateTenantRequest:
+      type: object
+      properties:
+        name: { type: string }
+        region: { type: string }
+        isolationTier: { type: string, enum: [shared, dedicated] }
+        defaultLocale: { type: string, example: en-US }
+        supportedLocales:
+          type: array
+          items: { type: string, example: en-US }
+      required: [name, region, isolationTier, defaultLocale]
+    Application:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        name: { type: string }
+        businessCriticality: { type: string, enum: [low, medium, high, critical] }
+        dataClassification: { type: string, enum: [public, internal, confidential, restricted] }
+        status: { type: string }
+        instances:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApplicationInstance'
+      required: [id, tenantId, name, businessCriticality, dataClassification]
+    CreateApplicationRequest:
+      type: object
+      properties:
+        tenantId: { type: string, format: uuid }
+        name: { type: string }
+        businessCriticality: { type: string, enum: [low, medium, high, critical] }
+        dataClassification: { type: string, enum: [public, internal, confidential, restricted] }
+        targetVendors:
+          type: array
+          items:
+            type: object
+            properties:
+              domain:
+                type: string
+                enum: [IGA, IAM, PAM, SSO]
+              vendor: { type: string }
+              product: { type: string }
+        instances:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateApplicationInstanceRequest'
+      required: [tenantId, name, businessCriticality, dataClassification]
+    ApplicationInstance:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        applicationId: { type: string, format: uuid }
+        instanceName: { type: string, example: PROD }
+        environmentType: { type: string, enum: [dev, test, uat, stage, prod, other] }
+        endpoint: { type: string }
+        region: { type: string }
+        connectorProfileId: { type: string, format: uuid }
+        secretReference:
+          type: object
+          properties:
+            provider: { type: string, enum: [vault, aws_sm, azure_kv, gcp_sm] }
+            path: { type: string }
+        status: { type: string, enum: [draft, ready, onboarded, failed] }
+      required: [id, applicationId, instanceName, environmentType]
+    CreateApplicationInstanceRequest:
+      type: object
+      properties:
+        instanceName: { type: string, example: PROD }
+        environmentType: { type: string, enum: [dev, test, uat, stage, prod, other] }
+        endpoint: { type: string }
+        region: { type: string }
+        connectorProfileId: { type: string, format: uuid }
+        secretReference:
+          type: object
+          properties:
+            provider: { type: string, enum: [vault, aws_sm, azure_kv, gcp_sm] }
+            path: { type: string }
+      required: [instanceName, environmentType]
+    UpdateApplicationInstanceRequest:
+      type: object
+      properties:
+        instanceName: { type: string }
+        environmentType: { type: string, enum: [dev, test, uat, stage, prod, other] }
+        endpoint: { type: string }
+        region: { type: string }
+        connectorProfileId: { type: string, format: uuid }
+        secretReference:
+          type: object
+          properties:
+            provider: { type: string, enum: [vault, aws_sm, azure_kv, gcp_sm] }
+            path: { type: string }
+    IngestRequest:
+      type: object
+      properties:
+        sourceType: { type: string, enum: [data_lake, manual, api] }
+        payload:
+          type: object
+          additionalProperties: true
+      required: [sourceType, payload]
+    AssignQuestionnaireRequest:
+      type: object
+      properties:
+        templateIds:
+          type: array
+          items: { type: string, format: uuid }
+        stakeholders:
+          type: array
+          items:
+            type: object
+            properties:
+              role: { type: string }
+              userId: { type: string, format: uuid }
+      required: [templateIds, stakeholders]
+    QuestionnaireAssignmentResult:
+      type: object
+      properties:
+        applicationId: { type: string, format: uuid }
+        assignments:
+          type: array
+          items:
+            type: object
+            properties:
+              questionnaireInstanceId: { type: string, format: uuid }
+              assignedToUserId: { type: string, format: uuid }
+              dueDate: { type: string, format: date-time }
+    QuestionnaireTemplate:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        version: { type: integer }
+        name: { type: string }
+        sections:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              title: { type: string }
+              appliesToRoles:
+                type: array
+                items: { type: string }
+              questions:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id: { type: string }
+                    text: { type: string }
+                    answerType: { type: string }
+                    required: { type: boolean }
+    WorkflowTemplate:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        version: { type: integer }
+        name: { type: string }
+        nodes:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              type: { type: string, enum: [task, approval, escalation, delegation, end] }
+              slaHours: { type: integer }
+              assignedRole: { type: string }
+        transitions:
+          type: array
+          items:
+            type: object
+            properties:
+              from: { type: string }
+              to: { type: string }
+              condition: { type: string }
+    OnboardingPlan:
+      type: object
+      properties:
+        applicationId: { type: string, format: uuid }
+        connectorRecommendation:
+          type: object
+          properties:
+            strategy: { type: string, enum: [ootb, custom, webservices] }
+            confidence: { type: number, format: float }
+            rationale: { type: string }
+        riskScore:
+          type: object
+          properties:
+            score: { type: number, format: float }
+            level: { type: string, enum: [low, medium, high, critical] }
+            factors:
+              type: array
+              items: { type: string }
+    ExecuteOnboardingRequest:
+      type: object
+      properties:
+        targetVendorDomain: { type: string, enum: [IGA, IAM, PAM, SSO] }
+        vendor: { type: string }
+        product: { type: string }
+        connectorId: { type: string, format: uuid }
+        secretReferences:
+          type: array
+          items:
+            type: object
+            properties:
+              provider: { type: string, enum: [vault, aws_sm, azure_kv, gcp_sm] }
+              path: { type: string }
+      required: [targetVendorDomain, vendor, product]
+    ExecutionResponse:
+      type: object
+      properties:
+        executionId: { type: string, format: uuid }
+        status: { type: string, enum: [queued, running, completed, failed] }
+    ConnectorSearchRequest:
+      type: object
+      properties:
+        domain: { type: string, enum: [IGA, IAM, PAM, SSO] }
+        vendor: { type: string }
+        product: { type: string }
+        productVersion: { type: string }
+      required: [domain, vendor, product]
+    ConnectorDefinition:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        domain: { type: string, enum: [IGA, IAM, PAM, SSO] }
+        vendor: { type: string }
+        product: { type: string }
+        type: { type: string, enum: [ootb, custom, webservices] }
+        operations:
+          type: array
+          items: { type: string }
+        status: { type: string, enum: [active, deprecated, draft] }
+    CustomConnectorScaffoldRequest:
+      type: object
+      properties:
+        applicationId: { type: string, format: uuid }
+        targetVendorDomain: { type: string, enum: [IGA, IAM, PAM, SSO] }
+        schema:
+          type: object
+          additionalProperties: true
+      required: [applicationId, targetVendorDomain, schema]
+    ExportRequest:
+      type: object
+      properties:
+        tenantId: { type: string, format: uuid }
+        applicationIds:
+          type: array
+          items: { type: string, format: uuid }
+        destination:
+          type: object
+          properties:
+            type: { type: string, enum: [git, repository] }
+            url: { type: string }
+            branch: { type: string }
+        includeEnvironments:
+          type: boolean
+          default: true
+      required: [tenantId, destination]
+    ProviderAccessRequest:
+      type: object
+      properties:
+        tenantId: { type: string, format: uuid }
+        requestedBy: { type: string, format: uuid }
+        purpose: { type: string }
+        allowedDataScope:
+          type: array
+          items: { type: string }
+        expiresAt: { type: string, format: date-time }
+      required: [tenantId, purpose, allowedDataScope, expiresAt]
+    ProviderAccessDecision:
+      type: object
+      properties:
+        requestId: { type: string, format: uuid }
+        decision: { type: string, enum: [approved, denied, revoked] }
+        decidedBy: { type: string, format: uuid }
+        reason: { type: string }
+      required: [requestId, decision, decidedBy]
+    AuthProviderCatalogEntry:
+      type: object
+      properties:
+        id: { type: string }
+        providerName: { type: string }
+        providerCategory: { type: string, enum: [iam, ciam, sso, federation] }
+        supportedProtocols:
+          type: array
+          items: { type: string, enum: [OIDC, SAML, OAUTH2, WS_FED, SCIM] }
+        status: { type: string, enum: [active, beta, deprecated] }
+      required: [id, providerName, providerCategory, supportedProtocols, status]
+    AuthProviderConfig:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        providerName: { type: string }
+        protocol: { type: string, enum: [OIDC, SAML, OAUTH2, WS_FED] }
+        isPrimary: { type: boolean, default: false }
+        isFallback: { type: boolean, default: false }
+        loginPolicy: { type: string, enum: [always, domain_routed, group_routed] }
+        status: { type: string, enum: [active, disabled, testing] }
+      required: [id, tenantId, providerName, protocol, status]
+    CreateAuthProviderConfigRequest:
+      type: object
+      properties:
+        tenantId: { type: string, format: uuid }
+        providerName: { type: string }
+        protocol: { type: string, enum: [OIDC, SAML, OAUTH2, WS_FED] }
+        metadata:
+          type: object
+          additionalProperties: true
+        claimMapping:
+          type: object
+          additionalProperties: true
+        isPrimary: { type: boolean, default: false }
+        isFallback: { type: boolean, default: false }
+        loginPolicy: { type: string, enum: [always, domain_routed, group_routed] }
+      required: [tenantId, providerName, protocol, metadata]
+    UpdateAuthProviderConfigRequest:
+      type: object
+      properties:
+        metadata:
+          type: object
+          additionalProperties: true
+        claimMapping:
+          type: object
+          additionalProperties: true
+        isPrimary: { type: boolean }
+        isFallback: { type: boolean }
+        loginPolicy: { type: string, enum: [always, domain_routed, group_routed] }
+        status: { type: string, enum: [active, disabled, testing] }
+    SyncConnectorCatalogEntry:
+      type: object
+      properties:
+        id: { type: string }
+        sourceCategory: { type: string, enum: [hr, iam, ciam, sso, federation, cmdb, data_lake] }
+        providerName: { type: string }
+        supportedSyncModes:
+          type: array
+          items: { type: string, enum: [full, delta, event, scheduled] }
+        supportedObjects:
+          type: array
+          items: { type: string, enum: [users, groups, applications, ownership, employment] }
+        status: { type: string, enum: [active, beta, deprecated] }
+      required: [id, sourceCategory, providerName, supportedSyncModes, supportedObjects, status]
+    SyncConnectorConfig:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        sourceCategory: { type: string, enum: [hr, iam, ciam, sso, federation, cmdb, data_lake] }
+        providerName: { type: string }
+        syncMode: { type: string, enum: [full, delta, event, scheduled] }
+        includeObjects:
+          type: array
+          items: { type: string, enum: [users, groups, applications, ownership, employment] }
+        filterPolicy:
+          type: object
+          additionalProperties: true
+        status: { type: string, enum: [active, disabled, testing] }
+      required: [id, tenantId, sourceCategory, providerName, syncMode, includeObjects, status]
+    CreateSyncConnectorConfigRequest:
+      type: object
+      properties:
+        tenantId: { type: string, format: uuid }
+        sourceCategory: { type: string, enum: [hr, iam, ciam, sso, federation, cmdb, data_lake] }
+        providerName: { type: string }
+        syncMode: { type: string, enum: [full, delta, event, scheduled] }
+        includeObjects:
+          type: array
+          items: { type: string, enum: [users, groups, applications, ownership, employment] }
+        filterPolicy:
+          type: object
+          additionalProperties: true
+        credentialReference:
+          type: object
+          properties:
+            provider: { type: string, enum: [vault, aws_sm, azure_kv, gcp_sm] }
+            path: { type: string }
+      required: [tenantId, sourceCategory, providerName, syncMode, includeObjects]
+    RunSyncJobRequest:
+      type: object
+      properties:
+        connectorId: { type: string, format: uuid }
+        runType: { type: string, enum: [manual, scheduled, event] }
+        dryRun: { type: boolean, default: false }
+      required: [connectorId, runType]
+    SyncJobResponse:
+      type: object
+      properties:
+        jobId: { type: string, format: uuid }
+        connectorId: { type: string, format: uuid }
+        runType: { type: string, enum: [manual, scheduled, event] }
+        status: { type: string, enum: [queued, running, completed, failed] }
+        stats:
+          type: object
+          properties:
+            usersProcessed: { type: integer, default: 0 }
+            applicationsProcessed: { type: integer, default: 0 }
+            errors: { type: integer, default: 0 }
+      required: [jobId, connectorId, runType, status]
+    LocaleInfo:
+      type: object
+      properties:
+        locale: { type: string, example: en-US }
+        language: { type: string, example: English }
+        direction: { type: string, enum: [ltr, rtl] }
+        status: { type: string, enum: [active, beta, disabled] }
+      required: [locale, language, direction, status]
+    TranslationBundle:
+      type: object
+      properties:
+        namespace: { type: string }
+        locale: { type: string, example: en-US }
+        version: { type: integer }
+        messages:
+          type: object
+          additionalProperties:
+            type: string
+      required: [namespace, locale, version, messages]
+    AccessibilityPreferences:
+      type: object
+      properties:
+        keyboardOnlyMode: { type: boolean, default: true }
+        focusRingStyle: { type: string, enum: [default, high_contrast] }
+        reducedMotion: { type: boolean, default: false }
+        highContrastMode: { type: boolean, default: false }
+        screenReaderOptimized: { type: boolean, default: false }
+      required: [keyboardOnlyMode, reducedMotion, highContrastMode]
+    UpsertAccessibilityPreferencesRequest:
+      type: object
+      properties:
+        keyboardOnlyMode: { type: boolean }
+        focusRingStyle: { type: string, enum: [default, high_contrast] }
+        reducedMotion: { type: boolean }
+        highContrastMode: { type: boolean }
+        screenReaderOptimized: { type: boolean }
+    ComplianceFramework:
+      type: object
+      properties:
+        name:
+          type: string
+          enum: [SOC1, SOC2, GDPR, HIPAA, SOX, PCI_DSS, CCPA_CPRA, ISO_27001, ISO_27701, ISO_22301]
+        version: { type: string }
+      required: [name, version]
+    ComplianceReportRequest:
+      type: object
+      properties:
+        tenantId: { type: string, format: uuid }
+        framework:
+          type: string
+          enum: [SOC1, SOC2, GDPR, HIPAA, SOX, PCI_DSS, CCPA_CPRA, ISO_27001, ISO_27701, ISO_22301]
+        scope:
+          type: object
+          properties:
+            applicationIds:
+              type: array
+              items: { type: string, format: uuid }
+            includeEvidence: { type: boolean, default: true }
+      required: [tenantId, framework]
+    ComplianceReportResponse:
+      type: object
+      properties:
+        reportId: { type: string, format: uuid }
+        status: { type: string, enum: [queued, running, completed, failed] }
+        framework:
+          type: string
+          enum: [SOC1, SOC2, GDPR, HIPAA, SOX, PCI_DSS, CCPA_CPRA, ISO_27001, ISO_27701, ISO_22301]
+      required: [reportId, status, framework]
