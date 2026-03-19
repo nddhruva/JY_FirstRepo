@@ -24,6 +24,8 @@ class Settings:
     bootstrap_admin_username: str
     bootstrap_admin_password: str
     graph_database_url: str | None
+    upload_dir: str
+    max_upload_bytes: int
 
 
 def get_settings() -> Settings:
@@ -35,6 +37,8 @@ def get_settings() -> Settings:
         bootstrap_admin_username=getenv("AOP_BOOTSTRAP_ADMIN_USERNAME", "platform_admin"),
         bootstrap_admin_password=getenv("AOP_BOOTSTRAP_ADMIN_PASSWORD", "ChangeMe123!"),
         graph_database_url=getenv("AOP_GRAPH_DATABASE_URL"),
+        upload_dir=getenv("AOP_UPLOAD_DIR", "./uploads"),
+        max_upload_bytes=int(getenv("AOP_MAX_UPLOAD_BYTES", str(5 * 1024 * 1024))),
     )
 
 

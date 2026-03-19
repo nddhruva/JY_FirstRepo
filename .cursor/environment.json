@@ -9,6 +9,7 @@
   },
   "persistedDirectories": [
     "/workspace/.venv",
+    "/workspace/.audit-venv",
     "/workspace/.pytest_cache",
     "/home/ubuntu/.cache/pip"
   ]

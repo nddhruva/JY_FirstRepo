@@ -2,7 +2,11 @@
 set -euo pipefail
 
 cd /workspace
-PYTHON_BIN="python3"
+SYSTEM_PYTHON="/usr/bin/python3"
+if [ ! -x "$SYSTEM_PYTHON" ]; then
+  SYSTEM_PYTHON="$(command -v python3)"
+fi
+PYTHON_BIN="$SYSTEM_PYTHON"
 if [ -f ".venv/bin/activate" ]; then
   # shellcheck disable=SC1091
   . .venv/bin/activate

@@ -44,6 +44,9 @@ The solution is designed to be:
 - `docs/11-database-and-security-hardening.md`  
   Database portability model, PostgreSQL + Alembic defaults, JWT auth, and policy enforcement hardening.
 
+- `docs/12-ui-branding-dashboard-reporting-security.md`  
+  Branding customization, intuitive dashboard/reporting UX capabilities, and security testing controls.
+
 - `docs/guides/admin-guide.md`  
   Tenant/platform administration, policy configuration, connectors, and governance operations.
 
@@ -105,6 +108,13 @@ python3 -m alembic upgrade head
 python3 -m uvicorn aop_api.main:app --app-dir src --host 0.0.0.0 --port 8000
 ```
 
+### Key production features included
+
+- Tenant branding configuration + branding asset uploads (logo/fonts/background/palette)
+- User-customizable dashboards and role-aware analytics
+- Report generation via filters, SQL (safe subset), GraphQL-like query shapes, and AI prompt mode
+- Security headers middleware, JWT auth, tenant-scope policy enforcement, and security check scripts
+
 ### Get a JWT token
 
 ```bash
@@ -137,6 +147,8 @@ Supporting scripts:
 - `.cursor/start.sh` - startup preflight and runtime environment setup
 - `scripts/run-tests.sh` - optimized test runner wrapper
 - `scripts/run-api.sh` - optimized uvicorn runner wrapper
+- `scripts/run-migrations.sh` - Alembic migration wrapper
+- `scripts/security-checks.sh` - bandit + pip-audit security checks
 
 These settings preinstall and validate the AOP FastAPI MVP dependencies:
 

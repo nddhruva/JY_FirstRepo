@@ -2,9 +2,13 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from datetime import timedelta
+from pathlib import Path
+import re
 from uuid import UUID
 
-from fastapi import Depends, FastAPI, HTTPException, Query, status
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, UploadFile, status
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
 from sqlalchemy.orm import Session, selectinload
 
 from .catalogs import (
@@ -22,7 +26,9 @@ from .db_models import (
     ApplicationInstanceRecord,
     ApplicationRecord,
     AuthProviderConfigRecord,
+    BrandingConfigRecord,
     ComplianceReportRecord,
+    DashboardConfigRecord,
     ExecutionRecord,
     ExportRecord,
     IngestRecord,
@@ -33,6 +39,7 @@ from .db_models import (
     TenantRecord,
     UserRecord,
     WorkflowTemplateRecord,
+    ReportRecord,
 )
 from .graph import graph_adapter
 from .models import (
@@ -43,6 +50,9 @@ from .models import (
     AuthProviderConfig,
     AuthTokenRequest,
     AuthTokenResponse,
+    BrandingAssetType,
+    BrandingAssetUploadResponse,
+    BrandingConfig,
     ComplianceReportRequest,
     ComplianceReportResponse,
     ConnectorDefinition,
@@ -69,9 +79,16 @@ from .models import (
     SyncJobResponse,
     Tenant,
     TranslationBundle,
+    DashboardConfig,
+    DashboardAnalyticsResponse,
+    ReportGenerateRequest,
+    ReportMode,
+    ReportResult,
     UpdateApplicationInstanceRequest,
     UpdateAuthProviderConfigRequest,
     UpsertAccessibilityPreferencesRequest,
+    UpsertBrandingConfigRequest,
+    UpsertDashboardConfigRequest,
     WorkflowTemplate,
     new_uuid,
     utcnow,
@@ -102,6 +119,52 @@ def score_for(classification: str, criticality: str) -> tuple[float, str]:
     return total, "low"
 
 
+ALLOWED_REPORT_TABLES = {
+    "applications",
+    "application_instances",
+    "executions",
+    "sync_jobs",
+    "provider_access_requests",
+    "compliance_reports",
+}
+FORBIDDEN_SQL_TOKENS = {
+    "insert",
+    "update",
+    "delete",
+    "drop",
+    "alter",
+    "create",
+    "grant",
+    "revoke",
+    "truncate",
+    "attach",
+    "detach",
+    "pragma",
+}
+
+
+def ensure_upload_dir() -> None:
+    Path(settings.upload_dir).mkdir(parents=True, exist_ok=True)
+
+
+def safe_report_limit(limit: int) -> int:
+    return max(1, min(500, limit))
+
+
+def validate_safe_sql(sql_query: str) -> str:
+    query = sql_query.strip()
+    normalized = re.sub(r"\s+", " ", query).lower()
+    if ";" in normalized or "--" in normalized or "/*" in normalized:
+        raise HTTPException(status_code=400, detail="Unsafe SQL constructs are not allowed")
+    if not normalized.startswith("select "):
+        raise HTTPException(status_code=400, detail="Only SELECT queries are allowed")
+    if any(token in normalized for token in FORBIDDEN_SQL_TOKENS):
+        raise HTTPException(status_code=400, detail="Unsafe SQL keyword detected")
+    if not any(f" {table}" in normalized for table in ALLOWED_REPORT_TABLES):
+        raise HTTPException(status_code=400, detail="Query must target approved reporting tables")
+    return query
+
+
 def require_platform_admin(principal: Principal = Depends(get_current_principal)) -> Principal:
     if "platform_admin" not in principal.roles:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Platform admin required")
@@ -126,6 +189,7 @@ def seed_bootstrap_admin(db: Session) -> None:
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_db()
+    ensure_upload_dir()
     with SessionLocal() as db:
         seed_bootstrap_admin(db)
     yield
@@ -137,6 +201,18 @@ app = FastAPI(
     summary="Production-oriented API-first onboarding for IGA/IAM/PAM/SSO",
     lifespan=lifespan,
 )
+
+
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["X-XSS-Protection"] = "0"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    response.headers["Content-Security-Policy"] = "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'"
+    return response
 
 
 def to_tenant_model(record: TenantRecord) -> Tenant:
@@ -174,6 +250,46 @@ def to_application_model(record: ApplicationRecord) -> Application:
         status=record.status,
         targetVendors=record.target_vendors,
         instances=[to_instance_model(item) for item in record.instances],
+    )
+
+
+def to_branding_model(record: BrandingConfigRecord) -> BrandingConfig:
+    return BrandingConfig(
+        tenantId=record.tenant_id,
+        brandName=record.brand_name,
+        colorPalette=record.color_palette or {},
+        fonts=record.fonts or {},
+        logoUrl=record.logo_url,
+        backgroundImageUrl=record.background_image_url,
+        customCss=record.custom_css,
+        assets=record.assets or {},
+        updatedAt=record.updated_at,
+    )
+
+
+def to_dashboard_model(record: DashboardConfigRecord) -> DashboardConfig:
+    return DashboardConfig(
+        id=record.id,
+        tenantId=record.tenant_id,
+        userId=record.user_id,
+        name=record.name,
+        isDefault=record.is_default,
+        layout=record.layout or {},
+        widgets=record.widgets or [],
+    )
+
+
+def to_report_model(record: ReportRecord) -> ReportResult:
+    return ReportResult(
+        id=record.id,
+        tenantId=record.tenant_id,
+        title=record.title,
+        mode=record.mode,
+        status=record.status,
+        summary=record.summary,
+        data=record.data or [],
+        visualizations=record.visualizations or [],
+        generatedAt=record.generated_at,
     )
 
 
@@ -241,6 +357,107 @@ def create_tenant(
     db.commit()
     db.refresh(tenant)
     return to_tenant_model(tenant)
+
+
+@app.get("/tenants/{tenant_id}/branding")
+def get_tenant_branding(
+    tenant_id: UUID,
+    db: Session = Depends(get_db),
+    principal: Principal = Depends(require_permissions("branding:read")),
+):
+    enforce_tenant_scope(principal, tenant_id)
+    record = db.query(BrandingConfigRecord).filter(BrandingConfigRecord.tenant_id == tenant_id).one_or_none()
+    if not record:
+        return BrandingConfig(tenantId=tenant_id)
+    return to_branding_model(record)
+
+
+@app.put("/tenants/{tenant_id}/branding")
+def upsert_tenant_branding(
+    tenant_id: UUID,
+    request: UpsertBrandingConfigRequest,
+    db: Session = Depends(get_db),
+    principal: Principal = Depends(require_permissions("branding:write")),
+):
+    enforce_tenant_scope(principal, tenant_id)
+    tenant = db.query(TenantRecord).filter(TenantRecord.id == tenant_id).one_or_none()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    record = db.query(BrandingConfigRecord).filter(BrandingConfigRecord.tenant_id == tenant_id).one_or_none()
+    if not record:
+        record = BrandingConfigRecord(tenant_id=tenant_id)
+        db.add(record)
+    payload = request.model_dump(exclude_none=True)
+    if "brandName" in payload:
+        record.brand_name = payload["brandName"]
+    if "colorPalette" in payload:
+        record.color_palette = payload["colorPalette"]
+    if "fonts" in payload:
+        record.fonts = payload["fonts"]
+    if "logoUrl" in payload:
+        record.logo_url = payload["logoUrl"]
+    if "backgroundImageUrl" in payload:
+        record.background_image_url = payload["backgroundImageUrl"]
+    if "customCss" in payload:
+        record.custom_css = payload["customCss"]
+    db.commit()
+    db.refresh(record)
+    return to_branding_model(record)
+
+
+@app.post("/tenants/{tenant_id}/branding/assets")
+async def upload_branding_asset(
+    tenant_id: UUID,
+    assetType: BrandingAssetType = Form(...),
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    principal: Principal = Depends(require_permissions("branding:write")),
+):
+    enforce_tenant_scope(principal, tenant_id)
+    tenant = db.query(TenantRecord).filter(TenantRecord.id == tenant_id).one_or_none()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+
+    contents = await file.read()
+    size = len(contents)
+    if size <= 0:
+        raise HTTPException(status_code=400, detail="Empty file upload is not allowed")
+    if size > settings.max_upload_bytes:
+        raise HTTPException(status_code=400, detail="File exceeds maximum allowed upload size")
+
+    extension = Path(file.filename or "asset.bin").suffix.lower()
+    allowed_extensions = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".ttf", ".otf", ".woff", ".woff2", ".json"}
+    if extension and extension not in allowed_extensions:
+        raise HTTPException(status_code=400, detail="Unsupported asset file type")
+
+    tenant_dir = Path(settings.upload_dir) / str(tenant_id)
+    tenant_dir.mkdir(parents=True, exist_ok=True)
+    saved_name = f"{assetType.value}_{new_uuid().hex}{extension or '.bin'}"
+    saved_path = tenant_dir / saved_name
+    saved_path.write_bytes(contents)
+
+    record = db.query(BrandingConfigRecord).filter(BrandingConfigRecord.tenant_id == tenant_id).one_or_none()
+    if not record:
+        record = BrandingConfigRecord(tenant_id=tenant_id)
+        db.add(record)
+    assets = record.assets or {}
+    asset_bucket = assets.get(assetType.value, [])
+    asset_bucket.append(str(saved_path))
+    assets[assetType.value] = asset_bucket
+    record.assets = assets
+    if assetType == BrandingAssetType.logo:
+        record.logo_url = str(saved_path)
+    if assetType == BrandingAssetType.background:
+        record.background_image_url = str(saved_path)
+    db.commit()
+
+    return BrandingAssetUploadResponse(
+        assetType=assetType,
+        fileName=saved_name,
+        filePath=str(saved_path),
+        contentType=file.content_type or "application/octet-stream",
+        sizeBytes=size,
+    )
 
 
 @app.post("/applications", status_code=status.HTTP_201_CREATED)
@@ -896,3 +1113,254 @@ def run_compliance_report(
     )
     db.commit()
     return report
+
+
+@app.get("/dashboards/me")
+def get_my_dashboard(
+    tenantId: UUID | None = Query(default=None),
+    db: Session = Depends(get_db),
+    principal: Principal = Depends(require_permissions("dashboard:read")),
+):
+    scope_tenant = tenantId or principal.tenant_id
+    if scope_tenant:
+        enforce_tenant_scope(principal, scope_tenant)
+    record = (
+        db.query(DashboardConfigRecord)
+        .filter(
+            DashboardConfigRecord.user_id == principal.user_id,
+            DashboardConfigRecord.tenant_id == scope_tenant,
+        )
+        .one_or_none()
+    )
+    if not record:
+        return DashboardConfig(userId=principal.user_id, tenantId=scope_tenant, widgets=[])
+    return to_dashboard_model(record)
+
+
+@app.put("/dashboards/me")
+def upsert_my_dashboard(
+    request: UpsertDashboardConfigRequest,
+    db: Session = Depends(get_db),
+    principal: Principal = Depends(require_permissions("dashboard:write")),
+):
+    if request.tenantId:
+        enforce_tenant_scope(principal, request.tenantId)
+    record = (
+        db.query(DashboardConfigRecord)
+        .filter(
+            DashboardConfigRecord.user_id == principal.user_id,
+            DashboardConfigRecord.tenant_id == request.tenantId,
+        )
+        .one_or_none()
+    )
+    if not record:
+        record = DashboardConfigRecord(
+            user_id=principal.user_id,
+            tenant_id=request.tenantId,
+        )
+        db.add(record)
+    record.name = request.name
+    record.is_default = request.isDefault
+    record.layout = request.layout
+    record.widgets = request.widgets
+    db.commit()
+    db.refresh(record)
+    return to_dashboard_model(record)
+
+
+@app.get("/dashboards/analytics")
+def get_dashboard_analytics(
+    tenantId: UUID = Query(...),
+    db: Session = Depends(get_db),
+    principal: Principal = Depends(require_permissions("dashboard:read")),
+):
+    enforce_tenant_scope(principal, tenantId)
+    total_apps = db.query(ApplicationRecord).filter(ApplicationRecord.tenant_id == tenantId).count()
+    completed_apps = (
+        db.query(ApplicationRecord)
+        .filter(ApplicationRecord.tenant_id == tenantId, ApplicationRecord.status.in_(["onboarded", "completed"]))
+        .count()
+    )
+    denials = (
+        db.query(ProviderAccessRequestRecord)
+        .filter(ProviderAccessRequestRecord.tenant_id == tenantId, ProviderAccessRequestRecord.status == "denied")
+        .count()
+    )
+    execution_errors = (
+        db.query(ExecutionRecord)
+        .join(ApplicationRecord, ApplicationRecord.id == ExecutionRecord.application_id)
+        .filter(ApplicationRecord.tenant_id == tenantId, ExecutionRecord.status == "failed")
+        .count()
+    )
+    sync_errors = (
+        db.query(SyncJobRecord)
+        .join(SyncConnectorConfigRecord, SyncConnectorConfigRecord.id == SyncJobRecord.connector_id)
+        .filter(SyncConnectorConfigRecord.tenant_id == tenantId, SyncJobRecord.status == "failed")
+        .count()
+    )
+    errors = execution_errors + sync_errors
+
+    focus_items: list[dict] = []
+    if errors > 0:
+        focus_items.append({"type": "errors", "priority": "high", "count": errors, "message": "Investigate failed jobs"})
+    pending_consents = (
+        db.query(ProviderAccessRequestRecord)
+        .filter(ProviderAccessRequestRecord.tenant_id == tenantId, ProviderAccessRequestRecord.status == "pending")
+        .count()
+    )
+    if pending_consents > 0:
+        focus_items.append(
+            {"type": "approvals", "priority": "medium", "count": pending_consents, "message": "Pending consent approvals"}
+        )
+
+    progress = 0.0 if total_apps == 0 else round((completed_apps / total_apps) * 100.0, 2)
+    charts = [
+        {"type": "donut", "title": "Onboarding Progress", "data": {"completed": completed_apps, "remaining": total_apps - completed_apps}},
+        {"type": "bar", "title": "Operational Exceptions", "data": {"denials": denials, "errors": errors}},
+    ]
+    role = principal.roles[0] if principal.roles else "user"
+    return DashboardAnalyticsResponse(
+        tenantId=tenantId,
+        role=role,
+        progress=progress,
+        completions=completed_apps,
+        denials=denials,
+        errors=errors,
+        focusItems=focus_items,
+        charts=charts,
+    )
+
+
+def _run_filter_report(db: Session, tenant_id: UUID, filters: dict, limit: int) -> list[dict]:
+    query = db.query(ApplicationRecord).filter(ApplicationRecord.tenant_id == tenant_id)
+    if "status" in filters:
+        query = query.filter(ApplicationRecord.status == filters["status"])
+    if "classification" in filters:
+        query = query.filter(ApplicationRecord.data_classification == filters["classification"])
+    rows = query.limit(limit).all()
+    return [
+        {
+            "id": str(row.id),
+            "name": row.name,
+            "status": row.status,
+            "dataClassification": row.data_classification,
+            "businessCriticality": row.business_criticality,
+        }
+        for row in rows
+    ]
+
+
+def _run_sql_report(db: Session, tenant_id: UUID, sql_query: str, limit: int) -> list[dict]:
+    safe_sql = validate_safe_sql(sql_query)
+    if "limit" not in safe_sql.lower():
+        safe_sql = f"{safe_sql.rstrip()} LIMIT {limit}"
+    result = db.execute(text(safe_sql)).mappings().all()
+    scoped = []
+    for row in result:
+        row_data = dict(row)
+        if "tenant_id" in row_data and str(row_data["tenant_id"]) != str(tenant_id):
+            continue
+        scoped.append({k: (str(v) if isinstance(v, UUID) else v) for k, v in row_data.items()})
+    return scoped[:limit]
+
+
+def _run_graphql_report(db: Session, tenant_id: UUID, graphql_query: str, limit: int) -> list[dict]:
+    query_lower = graphql_query.lower()
+    if "applications" in query_lower:
+        return _run_filter_report(db, tenant_id, {}, limit)
+    if "errors" in query_lower or "executions" in query_lower:
+        rows = (
+            db.query(ExecutionRecord)
+            .join(ApplicationRecord, ApplicationRecord.id == ExecutionRecord.application_id)
+            .filter(ApplicationRecord.tenant_id == tenant_id, ExecutionRecord.status == "failed")
+            .limit(limit)
+            .all()
+        )
+        return [{"executionId": str(row.id), "applicationId": str(row.application_id), "status": row.status} for row in rows]
+    raise HTTPException(status_code=400, detail="Unsupported GraphQL report query shape")
+
+
+def _run_ai_prompt_report(db: Session, tenant_id: UUID, ai_prompt: str, limit: int) -> tuple[list[dict], str]:
+    prompt = ai_prompt.lower()
+    if "error" in prompt or "focus" in prompt:
+        data = _run_graphql_report(db, tenant_id, "query { errors }", limit)
+        return data, "AI identified operational risk hotspots."
+    if "completion" in prompt or "progress" in prompt:
+        data = _run_filter_report(db, tenant_id, {}, limit)
+        return data, "AI generated completion-focused onboarding summary."
+    data = _run_filter_report(db, tenant_id, {}, limit)
+    return data, "AI generated a general tenant onboarding report."
+
+
+@app.post("/reports/generate")
+def generate_report(
+    request: ReportGenerateRequest,
+    db: Session = Depends(get_db),
+    principal: Principal = Depends(require_permissions("report:write")),
+):
+    enforce_tenant_scope(principal, request.tenantId)
+    limit = safe_report_limit(request.limit)
+    summary = "Report generated successfully."
+    if request.mode == ReportMode.filters:
+        data = _run_filter_report(db, request.tenantId, request.filters, limit)
+    elif request.mode == ReportMode.sql:
+        if not request.sqlQuery:
+            raise HTTPException(status_code=400, detail="sqlQuery is required for SQL mode")
+        data = _run_sql_report(db, request.tenantId, request.sqlQuery, limit)
+    elif request.mode == ReportMode.graphql:
+        if not request.graphqlQuery:
+            raise HTTPException(status_code=400, detail="graphqlQuery is required for GraphQL mode")
+        data = _run_graphql_report(db, request.tenantId, request.graphqlQuery, limit)
+    elif request.mode == ReportMode.ai_prompt:
+        if not request.aiPrompt:
+            raise HTTPException(status_code=400, detail="aiPrompt is required for AI mode")
+        data, summary = _run_ai_prompt_report(db, request.tenantId, request.aiPrompt, limit)
+    else:
+        raise HTTPException(status_code=400, detail="Unsupported report mode")
+
+    visualizations = [
+        {"type": "table", "title": request.title, "fields": list(data[0].keys()) if data else []},
+        {"type": "bar", "title": "Records by Status", "xField": "status", "yField": "count"},
+    ]
+    report = ReportResult(
+        tenantId=request.tenantId,
+        title=request.title,
+        mode=request.mode,
+        summary=summary,
+        data=data,
+        visualizations=visualizations,
+    )
+    db.add(
+        ReportRecord(
+            id=report.id,
+            tenant_id=request.tenantId,
+            user_id=principal.user_id,
+            title=request.title,
+            mode=request.mode.value,
+            request_payload=request.model_dump(mode="json"),
+            summary=summary,
+            data=data,
+            visualizations=visualizations,
+            status=report.status,
+        )
+    )
+    db.commit()
+    return report
+
+
+@app.get("/reports")
+def list_reports(
+    tenantId: UUID = Query(...),
+    limit: int = Query(default=50, ge=1, le=200),
+    db: Session = Depends(get_db),
+    principal: Principal = Depends(require_permissions("report:read")),
+):
+    enforce_tenant_scope(principal, tenantId)
+    rows = (
+        db.query(ReportRecord)
+        .filter(ReportRecord.tenant_id == tenantId)
+        .order_by(ReportRecord.generated_at.desc())
+        .limit(limit)
+        .all()
+    )
+    return {"items": [to_report_model(row) for row in rows]}

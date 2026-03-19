@@ -37,6 +37,10 @@ Ensure cloud agents start with Python 3 tooling and all AOP FastAPI MVP dependen
   - Runs `python -m alembic upgrade head`
   - Uses venv + preconfigured `PYTHONPATH`
 
+- `scripts/security-checks.sh`
+  - Runs `bandit` and `pip-audit`
+  - Supports SAST/dependency vulnerability checks in cloud agents
+
 ## Notes
 
 - Install/start scripts are idempotent to support repeated cloud-agent boots.

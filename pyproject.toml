@@ -15,7 +15,8 @@ dependencies = [
   "alembic>=1.14.1",
   "psycopg[binary]>=3.2.3",
   "PyJWT>=2.10.1",
-  "passlib>=1.7.4",
+  "bcrypt>=4.3.0",
+  "python-multipart>=0.0.20",
   "neo4j>=5.27.0",
   "uvicorn>=0.42.0",
 ]
@@ -24,6 +25,8 @@ dependencies = [
 dev = [
   "pytest>=9.0.2",
   "httpx>=0.28.1",
+  "bandit>=1.8.3",
+  "pip-audit>=2.9.0",
 ]
 
 [tool.pytest.ini_options]

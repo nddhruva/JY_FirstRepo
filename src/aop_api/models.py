@@ -401,3 +401,99 @@ class AuthTokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     expires_in: int
+
+
+class BrandingAssetType(str, Enum):
+    logo = "logo"
+    font = "font"
+    background = "background"
+    palette = "palette"
+    other = "other"
+
+
+class BrandingConfig(BaseModel):
+    tenantId: UUID
+    brandName: str | None = None
+    colorPalette: dict[str, str] = Field(default_factory=dict)
+    fonts: dict[str, str] = Field(default_factory=dict)
+    logoUrl: str | None = None
+    backgroundImageUrl: str | None = None
+    customCss: str | None = None
+    assets: dict[str, list[str]] = Field(default_factory=dict)
+    updatedAt: datetime = Field(default_factory=utcnow)
+
+
+class UpsertBrandingConfigRequest(BaseModel):
+    brandName: str | None = None
+    colorPalette: dict[str, str] = Field(default_factory=dict)
+    fonts: dict[str, str] = Field(default_factory=dict)
+    logoUrl: str | None = None
+    backgroundImageUrl: str | None = None
+    customCss: str | None = None
+
+
+class BrandingAssetUploadResponse(BaseModel):
+    assetType: BrandingAssetType
+    fileName: str
+    filePath: str
+    contentType: str
+    sizeBytes: int
+
+
+class DashboardConfig(BaseModel):
+    id: UUID = Field(default_factory=new_uuid)
+    tenantId: UUID | None = None
+    userId: UUID
+    name: str = "My Dashboard"
+    isDefault: bool = True
+    layout: dict[str, Any] = Field(default_factory=dict)
+    widgets: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class UpsertDashboardConfigRequest(BaseModel):
+    tenantId: UUID | None = None
+    name: str = "My Dashboard"
+    isDefault: bool = True
+    layout: dict[str, Any] = Field(default_factory=dict)
+    widgets: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class DashboardAnalyticsResponse(BaseModel):
+    tenantId: UUID
+    role: str
+    progress: float
+    completions: int
+    denials: int
+    errors: int
+    focusItems: list[dict[str, Any]] = Field(default_factory=list)
+    charts: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class ReportMode(str, Enum):
+    filters = "filters"
+    sql = "sql"
+    graphql = "graphql"
+    ai_prompt = "ai_prompt"
+
+
+class ReportGenerateRequest(BaseModel):
+    tenantId: UUID
+    title: str = "Custom Report"
+    mode: ReportMode = ReportMode.filters
+    filters: dict[str, Any] = Field(default_factory=dict)
+    sqlQuery: str | None = None
+    graphqlQuery: str | None = None
+    aiPrompt: str | None = None
+    limit: int = 100
+
+
+class ReportResult(BaseModel):
+    id: UUID = Field(default_factory=new_uuid)
+    tenantId: UUID
+    title: str
+    mode: ReportMode
+    status: str = "completed"
+    summary: str
+    data: list[dict[str, Any]] = Field(default_factory=list)
+    visualizations: list[dict[str, Any]] = Field(default_factory=list)
+    generatedAt: datetime = Field(default_factory=utcnow)

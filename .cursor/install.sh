@@ -3,13 +3,17 @@ set -euo pipefail
 
 cd /workspace
 
-PYTHON_BIN="python3"
+SYSTEM_PYTHON="/usr/bin/python3"
+if [ ! -x "$SYSTEM_PYTHON" ]; then
+  SYSTEM_PYTHON="$(command -v python3)"
+fi
+PYTHON_BIN="$SYSTEM_PYTHON"
 VENV_ACTIVATE=".venv/bin/activate"
 
 # Create and reuse a local virtual environment when available.
 if [ ! -f "$VENV_ACTIVATE" ]; then
   rm -rf .venv
-  if python3 -m venv .venv >/dev/null 2>&1; then
+  if "$SYSTEM_PYTHON" -m venv .venv >/dev/null 2>&1; then
     :
   else
     echo "python3-venv unavailable; falling back to user-site install."

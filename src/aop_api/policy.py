@@ -23,11 +23,25 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "compliance:write",
         "consent:read",
         "consent:write",
+        "branding:read",
+        "branding:write",
+        "dashboard:read",
+        "dashboard:write",
+        "report:read",
+        "report:write",
     },
-    "app_owner": {"application:read", "application:write", "onboarding:plan", "onboarding:execute"},
+    "app_owner": {
+        "application:read",
+        "application:write",
+        "onboarding:plan",
+        "onboarding:execute",
+        "dashboard:read",
+        "dashboard:write",
+        "report:read",
+    },
     "integration_admin": {"integration:read", "integration:write", "onboarding:plan", "onboarding:execute"},
-    "compliance_admin": {"compliance:read", "compliance:write", "application:read"},
-    "auditor": {"application:read", "compliance:read", "consent:read", "integration:read"},
+    "compliance_admin": {"compliance:read", "compliance:write", "application:read", "report:read", "report:write"},
+    "auditor": {"application:read", "compliance:read", "consent:read", "integration:read", "report:read"},
 }
 
 

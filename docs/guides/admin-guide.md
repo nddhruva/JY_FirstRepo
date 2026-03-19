@@ -32,6 +32,8 @@ This guide helps Tenant Admins and Platform Admins configure, operate, and gover
 6. Publish onboarding workflow and questionnaire templates.
 7. Enable compliance frameworks relevant to tenant obligations.
 8. Configure exports to Git/repository destinations.
+9. Configure tenant branding profile (palette/fonts/logo/background).
+10. Configure dashboard defaults and role-specific widgets.
 
 ---
 
@@ -153,6 +155,32 @@ This guide helps Tenant Admins and Platform Admins configure, operate, and gover
 - Store references only (`secret://provider/path`) in platform records.
 - Configure secret rotation cadence.
 - Validate downstream vendor connectivity after secret rotation events.
+
+---
+
+## 7A) Branding Administration
+
+Tenant admins can configure:
+- brand name
+- color palette tokens
+- font mappings
+- logos and background images
+- custom CSS overrides (if enabled by policy)
+
+Use branding APIs to apply tenant visual identity consistently across UI surfaces.
+
+---
+
+## 7B) Dashboard and Reporting Administration
+
+- Configure default dashboard templates for roles.
+- Allow users to personalize dashboard layout and widgets.
+- Provide report generation policies:
+  - filters mode
+  - safe SQL mode
+  - supported GraphQL mode
+  - AI prompt mode
+- Enforce report scope and data access via RBAC/tenant policy.
 
 For auth and sync integrations:
 - store IdP and source-system credentials only as external secret references.

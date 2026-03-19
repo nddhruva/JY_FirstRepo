@@ -41,6 +41,7 @@ Alembic files are included:
 - `alembic.ini`
 - `alembic/env.py`
 - `alembic/versions/0001_initial_schema.py`
+- `alembic/versions/0002_branding_dashboard_reports.py`
 
 Run migrations:
 
@@ -77,6 +78,20 @@ Example roles:
 - `integration_admin`
 - `compliance_admin`
 - `auditor`
+
+## Security Testing and Library Hygiene
+
+Implemented security checks:
+
+- `scripts/security-checks.sh`
+  - `bandit` (SAST-style code scanning)
+  - `pip-audit` (dependency vulnerability scanning)
+
+Library posture:
+
+- deprecated password hashing dependency removed
+- bcrypt-based password hashing implemented
+- dependency set pinned to maintained current versions in `requirements.txt`/`pyproject.toml`
 
 ## Bootstrap Security
 

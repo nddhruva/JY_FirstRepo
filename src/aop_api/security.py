@@ -5,17 +5,16 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import UUID
 
+import bcrypt
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from .config import settings
 from .db import get_db
 from .db_models import UserRecord
 
-pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 bearer_scheme = HTTPBearer(auto_error=False)
 
 
@@ -28,11 +27,14 @@ class Principal:
 
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(plain_password: str, password_hash: str) -> bool:
-    return pwd_context.verify(plain_password, password_hash)
+    try:
+        return bcrypt.checkpw(plain_password.encode("utf-8"), password_hash.encode("utf-8"))
+    except ValueError:
+        return False
 
 
 def create_access_token(subject: UserRecord) -> str:

@@ -20,6 +20,9 @@ The current MVP implementation (`src/aop_api`) includes:
 - compliance framework list and report run request
 - auth provider catalog/configuration endpoints
 - HR/IAM sync connector catalog/configuration and sync job endpoints
+- tenant branding configuration and asset upload endpoints
+- customizable dashboard and role-aware analytics endpoints
+- configurable report generation endpoints (filters/SQL/GraphQL/AI prompt modes)
 
 ## Test Coverage Included
 
@@ -36,6 +39,7 @@ The current MVP implementation (`src/aop_api`) includes:
 - Storage is persistent via SQLAlchemy-backed relational database.
 - Default migration path is PostgreSQL + Alembic.
 - JWT auth and role/policy enforcement are active for protected endpoints.
+- UI personalization capabilities are configuration-driven via API (branding + dashboards + reporting).
 - Endpoints are intentionally API-first and can be connected to a UI later.
 - Catalogs are seeded with representative industry integrations and are extensible.
 - Optional Neo4j adapter supports graph relationship projection.

@@ -1,8 +1,12 @@
+import os
+
 import uvicorn
 
 
 def main() -> None:
-    uvicorn.run("aop_api.main:app", host="0.0.0.0", port=8000, reload=False)
+    host = os.getenv("AOP_API_HOST", "127.0.0.1")
+    port = int(os.getenv("AOP_API_PORT", "8000"))
+    uvicorn.run("aop_api.main:app", host=host, port=port, reload=False)
 
 
 if __name__ == "__main__":

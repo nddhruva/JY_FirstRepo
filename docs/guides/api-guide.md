@@ -134,7 +134,49 @@ Use instances to model non-prod and prod under one parent application.
 
 ---
 
-## 8) Localization APIs
+## 8) Branding APIs
+
+### Get Tenant Branding
+`GET /tenants/{tenantId}/branding`
+
+### Upsert Tenant Branding
+`PUT /tenants/{tenantId}/branding`
+
+### Upload Branding Asset (logo/fonts/background/palette/etc.)
+`POST /tenants/{tenantId}/branding/assets`
+
+---
+
+## 9) Dashboard APIs
+
+### Get My Dashboard
+`GET /dashboards/me`
+
+### Upsert My Dashboard
+`PUT /dashboards/me`
+
+### Get Role-Aware Dashboard Analytics
+`GET /dashboards/analytics?tenantId=<tenantId>`
+
+---
+
+## 10) Reporting APIs
+
+### Generate Report
+`POST /reports/generate`
+
+Supported report modes:
+- `filters`
+- `sql` (safe read-only subset)
+- `graphql` (supported query shapes)
+- `ai_prompt` (GenAI-style prompt-driven)
+
+### List Reports
+`GET /reports?tenantId=<tenantId>`
+
+---
+
+## 11) Localization APIs
 
 ### List Supported Locales
 `GET /i18n/locales`
@@ -148,7 +190,7 @@ Use cases:
 
 ---
 
-## 6) Accessibility APIs
+## 12) Accessibility APIs
 
 ### Get User Accessibility Preferences
 `GET /users/me/accessibility-preferences`
@@ -165,7 +207,7 @@ Typical fields:
 
 ---
 
-## 9) Accessibility APIs
+## 13) Compliance APIs
 
 ### List Frameworks
 `GET /compliance/frameworks`
@@ -177,7 +219,7 @@ Use these APIs to automate audit pack generation for enabled frameworks.
 
 ---
 
-## 10) Compliance APIs
+## 14) Consent APIs
 
 ### Request Access
 `POST /consent/provider-access`
@@ -193,7 +235,7 @@ All provider-side data access is:
 
 ---
 
-## 11) Consent and Provider Access
+## 15) Error Model and Retries
 
 Use consistent error handling:
 - `400` validation failure
@@ -210,7 +252,7 @@ Retry guidance:
 
 ---
 
-## 12) Error Model and Retries
+## 16) Versioning and Compatibility
 
 - API version is path-based (`/v1`).
 - Backward-compatible changes:
@@ -220,11 +262,9 @@ Retry guidance:
 
 ---
 
-## 13) Versioning and Compatibility
+## 17) Example Onboarding Sequence
 
 ---
-
-## 14) Example Onboarding Sequence
 
 1. `POST /applications`
 2. `POST /applications/{applicationId}/instances`

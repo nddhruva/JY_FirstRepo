@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import os
+import shutil
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from uuid import uuid4
 
 import pytest
@@ -10,6 +12,7 @@ from fastapi.testclient import TestClient
 os.environ["AOP_DATABASE_URL"] = "sqlite+pysqlite:///./test_aop.db"
 os.environ["AOP_JWT_SECRET_KEY"] = "test-secret-key-minimum-32-bytes!!"
 os.environ["AOP_BOOTSTRAP_ADMIN_PASSWORD"] = "ChangeMe123!"
+os.environ["AOP_UPLOAD_DIR"] = "./test_uploads"
 
 from aop_api.db import SessionLocal, reset_db_for_tests
 from aop_api.main import app, seed_bootstrap_admin
@@ -18,6 +21,9 @@ from aop_api.main import app, seed_bootstrap_admin
 @pytest.fixture(autouse=True)
 def reset_database() -> None:
     reset_db_for_tests()
+    upload_dir = Path("./test_uploads")
+    if upload_dir.exists():
+        shutil.rmtree(upload_dir)
     with SessionLocal() as db:
         seed_bootstrap_admin(db)
 
@@ -33,6 +39,119 @@ def test_requires_authentication():
     client = TestClient(app)
     response = client.get("/applications")
     assert response.status_code == 401
+    health = client.get("/health")
+    assert health.headers["x-content-type-options"] == "nosniff"
+
+
+def test_branding_dashboard_and_reports_flow():
+    client = TestClient(app)
+    headers = auth_headers(client)
+
+    tenant = client.post(
+        "/tenants",
+        json={"name": "BrandCo", "region": "us-east-2", "isolationTier": "shared", "defaultLocale": "en-US"},
+        headers=headers,
+    )
+    tenant_id = tenant.json()["id"]
+
+    brand = client.put(
+        f"/tenants/{tenant_id}/branding",
+        json={
+            "brandName": "BrandCo Theme",
+            "colorPalette": {"primary": "#0011FF", "secondary": "#00FF66"},
+            "fonts": {"primary": "Inter", "heading": "Poppins"},
+            "logoUrl": "https://cdn.brandco.example/logo.png",
+        },
+        headers=headers,
+    )
+    assert brand.status_code == 200
+    assert brand.json()["brandName"] == "BrandCo Theme"
+
+    asset = client.post(
+        f"/tenants/{tenant_id}/branding/assets",
+        files={"file": ("logo.png", b"fake-image-data", "image/png")},
+        data={"assetType": "logo"},
+        headers=headers,
+    )
+    assert asset.status_code == 200
+    assert asset.json()["assetType"] == "logo"
+
+    dashboard = client.put(
+        "/dashboards/me",
+        json={
+            "tenantId": tenant_id,
+            "name": "Ops Dashboard",
+            "layout": {"columns": 3},
+            "widgets": [{"type": "progress", "title": "Progress"}],
+        },
+        headers=headers,
+    )
+    assert dashboard.status_code == 200
+    assert dashboard.json()["name"] == "Ops Dashboard"
+
+    analytics = client.get("/dashboards/analytics", params={"tenantId": tenant_id}, headers=headers)
+    assert analytics.status_code == 200
+    assert "progress" in analytics.json()
+    assert isinstance(analytics.json()["charts"], list)
+
+    # Seed application for reports.
+    app_create = client.post(
+        "/applications",
+        json={
+            "tenantId": tenant_id,
+            "name": "Analytics App",
+            "businessCriticality": "high",
+            "dataClassification": "internal",
+        },
+        headers=headers,
+    )
+    assert app_create.status_code == 201
+
+    filter_report = client.post(
+        "/reports/generate",
+        json={"tenantId": tenant_id, "title": "Filter Report", "mode": "filters", "filters": {"status": "draft"}},
+        headers=headers,
+    )
+    assert filter_report.status_code == 200
+    assert filter_report.json()["mode"] == "filters"
+
+    sql_report = client.post(
+        "/reports/generate",
+        json={
+            "tenantId": tenant_id,
+            "title": "SQL Report",
+            "mode": "sql",
+            "sqlQuery": "SELECT id, name, status, tenant_id FROM applications",
+        },
+        headers=headers,
+    )
+    assert sql_report.status_code == 200
+    assert sql_report.json()["mode"] == "sql"
+
+    ai_report = client.post(
+        "/reports/generate",
+        json={
+            "tenantId": tenant_id,
+            "title": "AI Focus Report",
+            "mode": "ai_prompt",
+            "aiPrompt": "Show me errors and focus areas",
+        },
+        headers=headers,
+    )
+    assert ai_report.status_code == 200
+    assert "AI" in ai_report.json()["summary"]
+
+    unsafe_sql = client.post(
+        "/reports/generate",
+        json={
+            "tenantId": tenant_id,
+            "title": "Unsafe SQL",
+            "mode": "sql",
+            "sqlQuery": "DROP TABLE applications",
+        },
+        headers=headers,
+    )
+    assert unsafe_sql.status_code == 400
 
 
 def test_tenant_application_and_instances_flow():

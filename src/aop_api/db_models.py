@@ -201,3 +201,46 @@ class ExportRecord(Base):
     tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id"), nullable=False)
     payload: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     requested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
+
+
+class BrandingConfigRecord(Base):
+    __tablename__ = "branding_configs"
+
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id"), primary_key=True)
+    brand_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    color_palette: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    fonts: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    logo_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    background_image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    custom_css: Mapped[str | None] = mapped_column(Text, nullable=True)
+    assets: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc, onupdate=now_utc)
+
+
+class DashboardConfigRecord(Base):
+    __tablename__ = "dashboard_configs"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID | None] = mapped_column(ForeignKey("tenants.id"), index=True, nullable=True)
+    user_id: Mapped[UUID] = mapped_column(index=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False, default="My Dashboard")
+    is_default: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    layout: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    widgets: Mapped[list[dict]] = mapped_column(JSON, default=list, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc, onupdate=now_utc)
+
+
+class ReportRecord(Base):
+    __tablename__ = "reports"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id"), index=True, nullable=False)
+    user_id: Mapped[UUID | None] = mapped_column(nullable=True)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    mode: Mapped[str] = mapped_column(String(64), nullable=False)
+    request_payload: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    data: Mapped[list[dict]] = mapped_column(JSON, default=list, nullable=False)
+    visualizations: Mapped[list[dict]] = mapped_column(JSON, default=list, nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="completed")
+    generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
