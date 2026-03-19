@@ -5,7 +5,9 @@
 - Enterprise-grade, modern, minimal visual language
 - Fast task completion with low cognitive load
 - Clear trust signals (status, approvals, audit, evidence)
-- Accessibility-first (WCAG 2.1 AA minimum)
+- Accessibility-first (WCAG 2.2 AA target)
+- Keyboard-only usability for all tasks
+- Internationalized experience from first release
 
 ---
 
@@ -51,6 +53,43 @@
 - Theme support (light/dark + tenant branding)
 - Keyboard-first navigation and global command palette
 - Clear empty/loading/error states with remediation guidance
+- Locale switcher and culturally appropriate formatting defaults
+- Live region announcements for asynchronous status changes
+
+---
+
+## Keyboard-Only Usability Baseline
+
+- No mandatory mouse interactions for any action.
+- Every interactive element has:
+  - visible focus ring,
+  - logical tab position,
+  - keyboard activation (`Enter`/`Space`),
+  - accessible name and role.
+- Modal dialogs trap focus and restore focus on close.
+- Drag-and-drop alternatives provide keyboard move actions.
+- Provide shortcut discoverability overlay (for example, `?` command help).
+
+Recommended global shortcuts:
+- `g a` -> Applications list
+- `g t` -> My tasks
+- `g d` -> Dashboard
+- `c` -> Create onboarding request
+- `/` -> Focus global search
+- `?` -> Open shortcut guide
+
+---
+
+## Localization and Internationalization UX
+
+- Support locale-specific content and formatting for:
+  - date/time (with timezone),
+  - number and currency,
+  - language and script variants.
+- Support right-to-left rendering for applicable languages.
+- Ensure truncation handling for longer translated strings.
+- Localize validation, error, and help text consistently.
+- Permit tenant-level default locale and per-user overrides.
 
 ---
 
@@ -61,6 +100,7 @@
   - tokens (color/spacing/typography/radius)
   - reusable components
   - accessibility test harness
+  - localization-ready component primitives
 - Data layer:
   - API-first integration using generated SDK from OpenAPI
 - Observability:

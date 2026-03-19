@@ -17,6 +17,9 @@ The solution is designed to be:
 
 ## Documents
 
+- `docs/00-documentation-index.md`  
+  Master index for product documentation (admin, user, API, localization, accessibility, compliance, and operations).
+
 - `docs/01-product-solution-blueprint.md`  
   End-to-end product capabilities, onboarding lifecycle, and non-functional requirements.
 
@@ -28,6 +31,30 @@ The solution is designed to be:
 
 - `docs/04-rbac-workflows-ai.md`  
   Role model, configurable workflow model, AI feature set, and governance controls.
+
+- `docs/guides/admin-guide.md`  
+  Tenant/platform administration, policy configuration, connectors, and governance operations.
+
+- `docs/guides/user-guide.md`  
+  End-user onboarding workflows for app owners, business owners, security, and compliance teams.
+
+- `docs/guides/api-guide.md`  
+  Practical API usage, authentication, versioning, examples, and integration patterns.
+
+- `docs/guides/localization-i18n-guide.md`  
+  Internationalization (i18n), localization (l10n), translation management, and regionalization controls.
+
+- `docs/guides/keyboard-accessibility-guide.md`  
+  Keyboard-only operation model, accessibility requirements, and QA acceptance criteria.
+
+- `docs/guides/operations-guide.md`  
+  Day-2 operational runbook for monitoring, incidents, resiliency, accessibility, localization, and compliance operations.
+
+- `docs/compliance/compliance-program.md`  
+  Compliance-by-design framework and audit readiness operating model.
+
+- `docs/compliance/control-matrix.md`  
+  Control crosswalk for SOC1/SOC2, GDPR, HIPAA, SOX, PCI DSS, CCPA/CPRA, and ISO standards.
 
 ## Intended Usage
 

@@ -9,6 +9,8 @@ flowchart LR
   APIGW --> CORE[Onboarding Core Services]
   APIGW --> AI[AI Copilot & Recommender]
   APIGW --> INT[Integration Orchestrator]
+  APIGW --> LOC[Localization Service]
+  APIGW --> COMP[Compliance Service]
 
   CORE --> WF[Workflow Engine]
   CORE --> Q[Questionnaire Engine]
@@ -27,6 +29,7 @@ flowchart LR
   EVENTBUS --> SIEM[Splunk/SIEM/Observability]
   CORE --> AUDIT[(Immutable Audit Store)]
   CORE --> EXPORT[Git/Repo Export Service]
+  CORE --> A11Y[Accessibility Preferences Service]
 ```
 
 ---
@@ -77,6 +80,12 @@ flowchart LR
 8. **AI Domain**
    - Recommendation, copilot, extraction, risk scoring, explainability logs
 
+9. **Localization Domain**
+   - Translation catalogs, locale fallback rules, locale-aware rendering contracts
+
+10. **Compliance Domain**
+   - Control library, policy mapping, evidence collection, compliance reporting
+
 ---
 
 ## Canonical Data Model (Simplified)
@@ -105,6 +114,12 @@ flowchart LR
   - id, provider, path, rotationPolicy, scope
 - `AuditEvent`
   - id, actor, action, resource, timestamp, signature
+- `LocalizationBundle`
+  - id, namespace, locale, version, status
+- `AccessibilityPreference`
+  - id, userId, keyboardMode, reducedMotion, contrastMode
+- `ComplianceControl`
+  - id, framework, controlId, statement, evidenceRules, owner
 
 ---
 
@@ -131,6 +146,32 @@ flowchart LR
 - PII and sensitive field tokenization
 - Signed API requests for system-to-system integrations
 - End-to-end audit immutability with integrity checks
+- Data minimization and purpose-limitation enforcement
+- Privacy-by-design controls for regulated data classes
+
+---
+
+## Accessibility and Keyboard-Only Architecture
+
+- All actionable UI components must be reachable and operable via keyboard.
+- Focus management service enforces deterministic tab order and focus restoration.
+- Command palette + keyboard shortcut registry for primary workflows.
+- Accessibility preferences are persisted per user and applied cross-session.
+- Automated accessibility tests integrated in CI (axe + keyboard path checks).
+
+---
+
+## Localization and Internationalization Architecture
+
+- Central localization service provides versioned translation bundles.
+- Locale negotiation order:
+  1) explicit user preference,
+  2) tenant default locale,
+  3) browser `Accept-Language`,
+  4) system fallback (`en-US`).
+- Support ICU message format for plurals, gender, and interpolation.
+- Localize UI labels, questionnaire content, notifications, and API error messages.
+- Store canonical business values independent of locale to avoid data drift.
 
 ---
 
@@ -149,6 +190,17 @@ flowchart LR
 - Metrics: service, workflow, connector, SLA metrics
 - Traces: distributed traces across API, workflow, connector execution
 - Destinations: Splunk HEC, Elastic, Sentinel, Datadog (adapter model)
+- Compliance telemetry: control status changes, evidence generation, policy exceptions
+
+---
+
+## Compliance-by-Design Architecture
+
+- Unified control framework mapped to SOC1/SOC2, GDPR, HIPAA, SOX, PCI DSS, CCPA/CPRA, ISO 27001/27701/22301.
+- Policy-as-code enforcement for access, retention, encryption, and segregation of duties.
+- Evidence service collects immutable proof artifacts for each control objective.
+- Audit-ready reporting endpoints generate framework-specific compliance packs.
+- Continuous control monitoring pipeline detects drift and opens remediation workflows.
 
 ---
 

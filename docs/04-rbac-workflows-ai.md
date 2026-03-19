@@ -32,6 +32,12 @@
 9. **Support Operator (Scoped)**
    - Operational support actions only for authorized tenant and with consent
 
+10. **Localization Manager**
+   - Manages translation bundles, locale rollout, and localization QA status
+
+11. **Compliance Manager**
+   - Owns control attestations, evidence completeness, and compliance reports
+
 ---
 
 ## Permission Strategy
@@ -55,6 +61,7 @@
   2) non-sensitive data scope,
   3) time-boxed access token,
   4) full audit logging.
+- Compliance and audit roles can view only scoped evidence based on framework and need-to-know.
 
 ---
 
@@ -132,6 +139,10 @@ transitions:
 - Backward compatibility:
   - in-flight onboarding remains pinned to assigned template version
 
+Localization requirements:
+- questionnaire text and help content must be locale-aware
+- translation bundle version must be recorded in questionnaire instance metadata
+
 ---
 
 ## AI Capability Architecture
@@ -178,6 +189,16 @@ Outputs:
 - Approval path optimization suggestions
 - Anomaly detection in onboarding responses
 - Evidence quality and completeness checks
+- Translation quality and terminology consistency suggestions
+
+---
+
+## Compliance Operating Model
+
+- Framework-aware evidence requirements are attached to workflow stages.
+- Control exception workflows require explicit risk acceptance and expiry.
+- Compliance reports are generated via API and signed for audit traceability.
+- Periodic attestations are enforced by workflow schedules and escalations.
 
 ---
 

@@ -14,6 +14,9 @@ The platform must support:
 - Secrets brokering
 - Full auditability and exportability
 - AI guidance and recommendation capabilities
+- Internationalization (i18n) and localization (l10n) by design
+- Keyboard-only operation for all critical user journeys
+- Compliance-by-design aligned to major standards and regulations
 
 ---
 
@@ -80,6 +83,8 @@ The platform must support:
 - Multi-region deployment on AWS/Azure/GCP
 - Tenant branding, configurable dashboards, guided wizard UX
 - Accessibility, responsive design, and audit-friendly UI
+- Keyboard-only user operation mode for every interaction path
+- Locale-aware UI and content rendering
 
 ### 2) Data Intake and Questionnaire Engine
 
@@ -153,6 +158,29 @@ The platform must support:
 - Customizable via admin UI and policy engine
 - Reusable workflow templates
 
+### 13) Localization and Internationalization
+
+- End-user locale preferences and tenant default locales
+- Translation bundles with versioning and fallback chain
+- Locale-aware formatting for dates, numbers, currency, and timezone
+- Right-to-left language support for supported locales
+- Questionnaire and workflow notification localization
+
+### 14) Keyboard-Only Accessibility
+
+- All features operable with keyboard only (no mouse dependency)
+- Logical tab order, visible focus states, and skip links
+- Keyboard shortcuts for high-frequency tasks
+- Screen-reader compatibility and semantic UI structure
+- Accessibility conformance target: WCAG 2.2 AA
+
+### 15) Compliance and Regulatory Coverage
+
+- Control framework mapped to SOC1, SOC2, GDPR, HIPAA, SOX, PCI DSS, CCPA/CPRA, and ISO standards
+- Data classification, retention, and consent management controls
+- Continuous control monitoring and evidence generation
+- Tenant-level compliance reporting packs for audits
+
 ---
 
 ## AI Capability Set
@@ -198,7 +226,9 @@ The platform must support:
 - 99.9%+ service availability (regional)
 - Horizontal scalability for onboarding bursts
 - P95 API latency < 300ms (read APIs), < 800ms (workflow writes)
-- SOC2/ISO27001 aligned controls
+- WCAG 2.2 AA accessibility conformance (including keyboard-only operation)
+- Full i18n/l10n support for UI, workflow messaging, and API error localization
+- Compliance-by-design coverage for SOC1/SOC2, GDPR, HIPAA, SOX, PCI DSS, CCPA/CPRA, ISO 27001/27701/22301
 - Encryption in transit and at rest
 - Data residency controls by tenant/region
 - DR-ready backup and recovery objectives per client tier

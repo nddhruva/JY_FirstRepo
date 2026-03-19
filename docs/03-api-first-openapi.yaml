@@ -16,6 +16,9 @@ tags:
   - name: Onboarding
   - name: Exports
   - name: Consent
+  - name: Localization
+  - name: Accessibility
+  - name: Compliance
 paths:
   /tenants:
     post:
@@ -269,6 +272,118 @@ paths:
       responses:
         '200':
           description: Decision recorded
+
+  /i18n/locales:
+    get:
+      tags: [Localization]
+      summary: List supported product locales
+      operationId: listSupportedLocales
+      parameters:
+        - $ref: '#/components/parameters/AcceptLanguage'
+      responses:
+        '200':
+          description: Supported locales
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LocaleInfo'
+
+  /i18n/translations/{namespace}:
+    get:
+      tags: [Localization]
+      summary: Retrieve translation bundle for namespace and locale
+      operationId: getTranslationBundle
+      parameters:
+        - in: path
+          name: namespace
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: locale
+          required: true
+          schema:
+            type: string
+            example: en-US
+      responses:
+        '200':
+          description: Translation bundle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranslationBundle'
+
+  /users/me/accessibility-preferences:
+    get:
+      tags: [Accessibility]
+      summary: Get current user accessibility preferences
+      operationId: getMyAccessibilityPreferences
+      responses:
+        '200':
+          description: Accessibility preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessibilityPreferences'
+    put:
+      tags: [Accessibility]
+      summary: Update current user accessibility preferences
+      operationId: updateMyAccessibilityPreferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertAccessibilityPreferencesRequest'
+      responses:
+        '200':
+          description: Accessibility preferences updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessibilityPreferences'
+
+  /compliance/frameworks:
+    get:
+      tags: [Compliance]
+      summary: List compliance frameworks supported by control mapping
+      operationId: listComplianceFrameworks
+      responses:
+        '200':
+          description: Frameworks list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ComplianceFramework'
+
+  /compliance/reports/run:
+    post:
+      tags: [Compliance]
+      summary: Generate compliance report package for a tenant and framework
+      operationId: runComplianceReport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComplianceReportRequest'
+      responses:
+        '202':
+          description: Compliance report queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceReportResponse'
 components:
   securitySchemes:
     bearerAuth:
@@ -283,6 +398,14 @@ components:
       schema:
         type: string
         format: uuid
+    AcceptLanguage:
+      in: header
+      name: Accept-Language
+      required: false
+      schema:
+        type: string
+        example: en-US
+      description: Preferred locale for localized API messages and content.
   schemas:
     Tenant:
       type: object
@@ -291,14 +414,22 @@ components:
         name: { type: string }
         region: { type: string }
         isolationTier: { type: string, enum: [shared, dedicated] }
-      required: [id, name, region, isolationTier]
+        defaultLocale: { type: string, example: en-US }
+        supportedLocales:
+          type: array
+          items: { type: string, example: en-US }
+      required: [id, name, region, isolationTier, defaultLocale]
     CreateTenantRequest:
       type: object
       properties:
         name: { type: string }
         region: { type: string }
         isolationTier: { type: string, enum: [shared, dedicated] }
-      required: [name, region, isolationTier]
+        defaultLocale: { type: string, example: en-US }
+        supportedLocales:
+          type: array
+          items: { type: string, example: en-US }
+      required: [name, region, isolationTier, defaultLocale]
     Application:
       type: object
       properties:
@@ -512,3 +643,71 @@ components:
         decidedBy: { type: string, format: uuid }
         reason: { type: string }
       required: [requestId, decision, decidedBy]
+    LocaleInfo:
+      type: object
+      properties:
+        locale: { type: string, example: en-US }
+        language: { type: string, example: English }
+        direction: { type: string, enum: [ltr, rtl] }
+        status: { type: string, enum: [active, beta, disabled] }
+      required: [locale, language, direction, status]
+    TranslationBundle:
+      type: object
+      properties:
+        namespace: { type: string }
+        locale: { type: string, example: en-US }
+        version: { type: integer }
+        messages:
+          type: object
+          additionalProperties:
+            type: string
+      required: [namespace, locale, version, messages]
+    AccessibilityPreferences:
+      type: object
+      properties:
+        keyboardOnlyMode: { type: boolean, default: true }
+        focusRingStyle: { type: string, enum: [default, high_contrast] }
+        reducedMotion: { type: boolean, default: false }
+        highContrastMode: { type: boolean, default: false }
+        screenReaderOptimized: { type: boolean, default: false }
+      required: [keyboardOnlyMode, reducedMotion, highContrastMode]
+    UpsertAccessibilityPreferencesRequest:
+      type: object
+      properties:
+        keyboardOnlyMode: { type: boolean }
+        focusRingStyle: { type: string, enum: [default, high_contrast] }
+        reducedMotion: { type: boolean }
+        highContrastMode: { type: boolean }
+        screenReaderOptimized: { type: boolean }
+    ComplianceFramework:
+      type: object
+      properties:
+        name:
+          type: string
+          enum: [SOC1, SOC2, GDPR, HIPAA, SOX, PCI_DSS, CCPA_CPRA, ISO_27001, ISO_27701, ISO_22301]
+        version: { type: string }
+      required: [name, version]
+    ComplianceReportRequest:
+      type: object
+      properties:
+        tenantId: { type: string, format: uuid }
+        framework:
+          type: string
+          enum: [SOC1, SOC2, GDPR, HIPAA, SOX, PCI_DSS, CCPA_CPRA, ISO_27001, ISO_27701, ISO_22301]
+        scope:
+          type: object
+          properties:
+            applicationIds:
+              type: array
+              items: { type: string, format: uuid }
+            includeEvidence: { type: boolean, default: true }
+      required: [tenantId, framework]
+    ComplianceReportResponse:
+      type: object
+      properties:
+        reportId: { type: string, format: uuid }
+        status: { type: string, enum: [queued, running, completed, failed] }
+        framework:
+          type: string
+          enum: [SOC1, SOC2, GDPR, HIPAA, SOX, PCI_DSS, CCPA_CPRA, ISO_27001, ISO_27701, ISO_22301]
+      required: [reportId, status, framework]
