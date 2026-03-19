@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aop-platform"
+version = "0.1.0"
+description = "Application Onboarding Platform API MVP"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "fastapi>=0.135.1",
+  "pydantic>=2.12.5",
+  "uvicorn>=0.42.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=9.0.2",
+  "httpx>=0.28.1",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

@@ -35,6 +35,9 @@ The solution is designed to be:
 - `docs/08-identity-auth-and-sync-integrations.md`  
   Identity authentication integrations, user/app sync connectors, and multi-instance application onboarding model.
 
+- `docs/09-mvp-implementation-status.md`  
+  Status of the runnable backend MVP implementation and covered capabilities.
+
 - `docs/guides/admin-guide.md`  
   Tenant/platform administration, policy configuration, connectors, and governance operations.
 
@@ -68,3 +71,27 @@ Use this blueprint as:
 3. API contract for engineering teams
 4. Implementation guide for connector and workflow teams
 5. Governance model for client and internal operations
+
+## MVP Backend Implementation
+
+This repository now includes a runnable API MVP based on the blueprint.
+
+### Project layout
+
+- `src/aop_api/main.py` - FastAPI application with blueprint-aligned endpoints.
+- `src/aop_api/models.py` - Pydantic models for core entities and requests.
+- `src/aop_api/store.py` - In-memory data store and seeded catalogs.
+- `tests/test_api_mvp.py` - End-to-end API tests for core flows.
+
+### Run locally
+
+```bash
+python3 -m pip install -r requirements.txt
+python3 -m uvicorn aop_api.main:app --app-dir src --host 0.0.0.0 --port 8000
+```
+
+### Run tests
+
+```bash
+python3 -m pytest -q
+```
