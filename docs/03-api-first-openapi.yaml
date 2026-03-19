@@ -1,0 +1,514 @@
+openapi: 3.1.0
+info:
+  title: Application Onboarding Platform API
+  version: 1.0.0
+  summary: API-first multi-tenant onboarding for IGA/IAM/PAM/SSO
+servers:
+  - url: https://api.aop.example.com/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: Tenants
+  - name: Applications
+  - name: Questionnaires
+  - name: Workflows
+  - name: Connectors
+  - name: Onboarding
+  - name: Exports
+  - name: Consent
+paths:
+  /tenants:
+    post:
+      tags: [Tenants]
+      summary: Create tenant
+      operationId: createTenant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTenantRequest'
+      responses:
+        '201':
+          description: Tenant created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tenant'
+
+  /applications:
+    post:
+      tags: [Applications]
+      summary: Register application for onboarding
+      operationId: createApplication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApplicationRequest'
+      responses:
+        '201':
+          description: Application created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+    get:
+      tags: [Applications]
+      summary: List tenant applications
+      operationId: listApplications
+      parameters:
+        - in: query
+          name: environment
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Application list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Application'
+
+  /applications/{applicationId}/ingest:
+    post:
+      tags: [Applications]
+      summary: Ingest data lake payload or manual intake
+      operationId: ingestApplicationData
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngestRequest'
+      responses:
+        '202':
+          description: Ingest accepted
+
+  /applications/{applicationId}/questionnaires/assign:
+    post:
+      tags: [Questionnaires]
+      summary: Generate and assign questionnaire set to stakeholders
+      operationId: assignQuestionnaires
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignQuestionnaireRequest'
+      responses:
+        '200':
+          description: Assignment complete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestionnaireAssignmentResult'
+
+  /questionnaire-templates:
+    post:
+      tags: [Questionnaires]
+      summary: Create or update questionnaire template version
+      operationId: upsertQuestionnaireTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuestionnaireTemplate'
+      responses:
+        '200':
+          description: Template upserted
+
+  /workflow-templates:
+    post:
+      tags: [Workflows]
+      summary: Create workflow template with approval/escalation/delegation rules
+      operationId: createWorkflowTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowTemplate'
+      responses:
+        '201':
+          description: Workflow template created
+
+  /applications/{applicationId}/onboarding/plan:
+    post:
+      tags: [Onboarding]
+      summary: Generate onboarding plan and connector recommendation
+      operationId: generateOnboardingPlan
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+      responses:
+        '200':
+          description: Plan generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingPlan'
+
+  /applications/{applicationId}/onboarding/execute:
+    post:
+      tags: [Onboarding]
+      summary: Execute onboarding into target vendor product
+      operationId: executeOnboarding
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecuteOnboardingRequest'
+      responses:
+        '202':
+          description: Execution started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionResponse'
+
+  /connectors/catalog/search:
+    post:
+      tags: [Connectors]
+      summary: Search OOTB connector catalog
+      operationId: searchConnectors
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectorSearchRequest'
+      responses:
+        '200':
+          description: Search result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ConnectorDefinition'
+
+  /connectors/custom/scaffold:
+    post:
+      tags: [Connectors]
+      summary: Create custom connector scaffold from application schema
+      operationId: scaffoldCustomConnector
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomConnectorScaffoldRequest'
+      responses:
+        '201':
+          description: Scaffold created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectorDefinition'
+
+  /exports/configuration:
+    post:
+      tags: [Exports]
+      summary: Export onboarding configuration package to Git/repository
+      operationId: exportConfiguration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportRequest'
+      responses:
+        '202':
+          description: Export queued
+
+  /consent/provider-access:
+    post:
+      tags: [Consent]
+      summary: Request provider-side product owner access to non-sensitive tenant data
+      operationId: requestProviderAccess
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProviderAccessRequest'
+      responses:
+        '201':
+          description: Request created
+    put:
+      tags: [Consent]
+      summary: Approve or deny provider access request
+      operationId: decideProviderAccess
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProviderAccessDecision'
+      responses:
+        '200':
+          description: Decision recorded
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    ApplicationId:
+      in: path
+      name: applicationId
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    Tenant:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        region: { type: string }
+        isolationTier: { type: string, enum: [shared, dedicated] }
+      required: [id, name, region, isolationTier]
+    CreateTenantRequest:
+      type: object
+      properties:
+        name: { type: string }
+        region: { type: string }
+        isolationTier: { type: string, enum: [shared, dedicated] }
+      required: [name, region, isolationTier]
+    Application:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        name: { type: string }
+        businessCriticality: { type: string, enum: [low, medium, high, critical] }
+        dataClassification: { type: string, enum: [public, internal, confidential, restricted] }
+        status: { type: string }
+      required: [id, tenantId, name, businessCriticality, dataClassification]
+    CreateApplicationRequest:
+      type: object
+      properties:
+        tenantId: { type: string, format: uuid }
+        name: { type: string }
+        businessCriticality: { type: string, enum: [low, medium, high, critical] }
+        dataClassification: { type: string, enum: [public, internal, confidential, restricted] }
+        targetVendors:
+          type: array
+          items:
+            type: object
+            properties:
+              domain:
+                type: string
+                enum: [IGA, IAM, PAM, SSO]
+              vendor: { type: string }
+              product: { type: string }
+      required: [tenantId, name, businessCriticality, dataClassification]
+    IngestRequest:
+      type: object
+      properties:
+        sourceType: { type: string, enum: [data_lake, manual, api] }
+        payload:
+          type: object
+          additionalProperties: true
+      required: [sourceType, payload]
+    AssignQuestionnaireRequest:
+      type: object
+      properties:
+        templateIds:
+          type: array
+          items: { type: string, format: uuid }
+        stakeholders:
+          type: array
+          items:
+            type: object
+            properties:
+              role: { type: string }
+              userId: { type: string, format: uuid }
+      required: [templateIds, stakeholders]
+    QuestionnaireAssignmentResult:
+      type: object
+      properties:
+        applicationId: { type: string, format: uuid }
+        assignments:
+          type: array
+          items:
+            type: object
+            properties:
+              questionnaireInstanceId: { type: string, format: uuid }
+              assignedToUserId: { type: string, format: uuid }
+              dueDate: { type: string, format: date-time }
+    QuestionnaireTemplate:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        version: { type: integer }
+        name: { type: string }
+        sections:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              title: { type: string }
+              appliesToRoles:
+                type: array
+                items: { type: string }
+              questions:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id: { type: string }
+                    text: { type: string }
+                    answerType: { type: string }
+                    required: { type: boolean }
+    WorkflowTemplate:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        version: { type: integer }
+        name: { type: string }
+        nodes:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              type: { type: string, enum: [task, approval, escalation, delegation, end] }
+              slaHours: { type: integer }
+              assignedRole: { type: string }
+        transitions:
+          type: array
+          items:
+            type: object
+            properties:
+              from: { type: string }
+              to: { type: string }
+              condition: { type: string }
+    OnboardingPlan:
+      type: object
+      properties:
+        applicationId: { type: string, format: uuid }
+        connectorRecommendation:
+          type: object
+          properties:
+            strategy: { type: string, enum: [ootb, custom, webservices] }
+            confidence: { type: number, format: float }
+            rationale: { type: string }
+        riskScore:
+          type: object
+          properties:
+            score: { type: number, format: float }
+            level: { type: string, enum: [low, medium, high, critical] }
+            factors:
+              type: array
+              items: { type: string }
+    ExecuteOnboardingRequest:
+      type: object
+      properties:
+        targetVendorDomain: { type: string, enum: [IGA, IAM, PAM, SSO] }
+        vendor: { type: string }
+        product: { type: string }
+        connectorId: { type: string, format: uuid }
+        secretReferences:
+          type: array
+          items:
+            type: object
+            properties:
+              provider: { type: string, enum: [vault, aws_sm, azure_kv, gcp_sm] }
+              path: { type: string }
+      required: [targetVendorDomain, vendor, product]
+    ExecutionResponse:
+      type: object
+      properties:
+        executionId: { type: string, format: uuid }
+        status: { type: string, enum: [queued, running, completed, failed] }
+    ConnectorSearchRequest:
+      type: object
+      properties:
+        domain: { type: string, enum: [IGA, IAM, PAM, SSO] }
+        vendor: { type: string }
+        product: { type: string }
+        productVersion: { type: string }
+      required: [domain, vendor, product]
+    ConnectorDefinition:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        domain: { type: string, enum: [IGA, IAM, PAM, SSO] }
+        vendor: { type: string }
+        product: { type: string }
+        type: { type: string, enum: [ootb, custom, webservices] }
+        operations:
+          type: array
+          items: { type: string }
+        status: { type: string, enum: [active, deprecated, draft] }
+    CustomConnectorScaffoldRequest:
+      type: object
+      properties:
+        applicationId: { type: string, format: uuid }
+        targetVendorDomain: { type: string, enum: [IGA, IAM, PAM, SSO] }
+        schema:
+          type: object
+          additionalProperties: true
+      required: [applicationId, targetVendorDomain, schema]
+    ExportRequest:
+      type: object
+      properties:
+        tenantId: { type: string, format: uuid }
+        applicationIds:
+          type: array
+          items: { type: string, format: uuid }
+        destination:
+          type: object
+          properties:
+            type: { type: string, enum: [git, repository] }
+            url: { type: string }
+            branch: { type: string }
+        includeEnvironments:
+          type: boolean
+          default: true
+      required: [tenantId, destination]
+    ProviderAccessRequest:
+      type: object
+      properties:
+        tenantId: { type: string, format: uuid }
+        requestedBy: { type: string, format: uuid }
+        purpose: { type: string }
+        allowedDataScope:
+          type: array
+          items: { type: string }
+        expiresAt: { type: string, format: date-time }
+      required: [tenantId, purpose, allowedDataScope, expiresAt]
+    ProviderAccessDecision:
+      type: object
+      properties:
+        requestId: { type: string, format: uuid }
+        decision: { type: string, enum: [approved, denied, revoked] }
+        decidedBy: { type: string, format: uuid }
+        reason: { type: string }
+      required: [requestId, decision, decidedBy]
