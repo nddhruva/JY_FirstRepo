@@ -4,6 +4,9 @@ import { useQuery } from '@tanstack/react-query'
 import { getDatabaseCapabilities } from './api'
 import { AuthPanel } from './components/AuthPanel'
 import { DashboardBuilder } from './components/DashboardBuilder'
+import { GovernanceConfigCenter } from './components/GovernanceConfigCenter'
+import { IntegrationsAdminPanel } from './components/IntegrationsAdminPanel'
+import { OnboardingWorkbench } from './components/OnboardingWorkbench'
 import { ReportDesigner } from './components/ReportDesigner'
 import { SecurityComplianceCenter } from './components/SecurityComplianceCenter'
 import { ThemeEditor } from './components/ThemeEditor'
@@ -11,7 +14,14 @@ import { parseJwtSession, tokenExpiresInSeconds } from './security'
 import type { AccessibilityPreferences, BrandingConfig, JwtSessionPayload } from './types'
 import { uuidSchema } from './validation'
 
-type Tab = 'theme' | 'dashboard' | 'reports' | 'compliance'
+type Tab =
+  | 'onboarding'
+  | 'integrations'
+  | 'governance'
+  | 'theme'
+  | 'dashboard'
+  | 'reports'
+  | 'compliance'
 
 function applyTheme(branding: BrandingConfig) {
   const root = document.documentElement
@@ -46,7 +56,7 @@ function applyAccessibilityPreferences(preferences: AccessibilityPreferences) {
 function App() {
   const [token, setToken] = useState(() => sessionStorage.getItem('aop_token') ?? '')
   const [tenantId, setTenantId] = useState(() => sessionStorage.getItem('aop_tenant_id') ?? '')
-  const [activeTab, setActiveTab] = useState<Tab>('theme')
+  const [activeTab, setActiveTab] = useState<Tab>('onboarding')
   const [themePreview, setThemePreview] = useState<BrandingConfig | null>(null)
   const [sessionTick, setSessionTick] = useState(() => Date.now())
   const [notice, setNotice] = useState<string | null>(null)
@@ -59,6 +69,72 @@ function App() {
   })
   const tenantIsValid = useMemo(() => uuidSchema.safeParse(tenantId).success, [tenantId])
   const session = useMemo<JwtSessionPayload | null>(() => parseJwtSession(token), [token])
+  const roles = useMemo(() => new Set(session?.roles ?? []), [session?.roles])
+
+  const roleFlags = useMemo(
+    () => ({
+      platformAdmin: roles.has('platform_admin'),
+      tenantAdmin: roles.has('tenant_admin'),
+      appOwner: roles.has('app_owner'),
+      integrationAdmin: roles.has('integration_admin'),
+      complianceAdmin: roles.has('compliance_admin'),
+      auditor: roles.has('auditor'),
+    }),
+    [roles],
+  )
+
+  const canWriteBranding = roleFlags.platformAdmin || roleFlags.tenantAdmin
+  const canWriteDashboard = roleFlags.platformAdmin || roleFlags.tenantAdmin || roleFlags.appOwner
+  const canWriteReports = roleFlags.platformAdmin || roleFlags.tenantAdmin || roleFlags.complianceAdmin
+  const canWriteCompliance = roleFlags.platformAdmin || roleFlags.tenantAdmin || roleFlags.complianceAdmin
+  const canWriteOnboarding =
+    roleFlags.platformAdmin || roleFlags.tenantAdmin || roleFlags.appOwner || roleFlags.integrationAdmin
+  const canWriteIntegrations = roleFlags.platformAdmin || roleFlags.tenantAdmin || roleFlags.integrationAdmin
+  const canWriteGovernance = roleFlags.platformAdmin || roleFlags.tenantAdmin || roleFlags.integrationAdmin
+
+  const navTabs = useMemo<Array<{ id: Tab; label: string; visible: boolean }>>(
+    () => [
+      {
+        id: 'onboarding',
+        label: 'Onboarding Workbench',
+        visible:
+          roleFlags.platformAdmin ||
+          roleFlags.tenantAdmin ||
+          roleFlags.appOwner ||
+          roleFlags.integrationAdmin ||
+          roleFlags.auditor,
+      },
+      {
+        id: 'integrations',
+        label: 'Integrations Admin',
+        visible: roleFlags.platformAdmin || roleFlags.tenantAdmin || roleFlags.integrationAdmin || roleFlags.auditor,
+      },
+      {
+        id: 'governance',
+        label: 'Governance & Config',
+        visible:
+          roleFlags.platformAdmin || roleFlags.tenantAdmin || roleFlags.integrationAdmin || roleFlags.complianceAdmin,
+      },
+      {
+        id: 'theme',
+        label: 'Theme Editor',
+        visible: roleFlags.platformAdmin || roleFlags.tenantAdmin,
+      },
+      { id: 'dashboard', label: 'Dashboard Builder', visible: true },
+      { id: 'reports', label: 'Report Designer', visible: true },
+      {
+        id: 'compliance',
+        label: 'Security & Compliance',
+        visible: roleFlags.platformAdmin || roleFlags.tenantAdmin || roleFlags.complianceAdmin || roleFlags.auditor,
+      },
+    ],
+    [roleFlags],
+  )
+  const visibleTabs = useMemo(() => navTabs.filter((tab) => tab.visible), [navTabs])
+  const currentTab = useMemo<Tab>(
+    () => (visibleTabs.some((tab) => tab.id === activeTab) ? activeTab : (visibleTabs[0]?.id ?? 'dashboard')),
+    [activeTab, visibleTabs],
+  )
 
   const dbCapabilitiesQuery = useQuery({
     queryKey: ['db-capabilities', token],
@@ -104,21 +180,27 @@ function App() {
   useEffect(() => {
     function onHotkeys(event: KeyboardEvent) {
       if (!token || !tenantId || !event.altKey) return
-      if (event.key === '1') setActiveTab('theme')
-      if (event.key === '2') setActiveTab('dashboard')
-      if (event.key === '3') setActiveTab('reports')
-      if (event.key === '4') setActiveTab('compliance')
+      if (event.key === '1') setActiveTab('onboarding')
+      if (event.key === '2') setActiveTab('integrations')
+      if (event.key === '3') setActiveTab('governance')
+      if (event.key === '4') setActiveTab('theme')
+      if (event.key === '5') setActiveTab('dashboard')
+      if (event.key === '6') setActiveTab('reports')
+      if (event.key === '7') setActiveTab('compliance')
     }
     window.addEventListener('keydown', onHotkeys)
     return () => window.removeEventListener('keydown', onHotkeys)
   }, [token, tenantId])
 
   const tabTitle = useMemo(() => {
-    if (activeTab === 'theme') return 'Theme Editor'
-    if (activeTab === 'dashboard') return 'Dashboard Builder'
-    if (activeTab === 'reports') return 'Report Designer'
+    if (currentTab === 'onboarding') return 'Onboarding Workbench'
+    if (currentTab === 'integrations') return 'Integrations Administration'
+    if (currentTab === 'governance') return 'Governance, Settings & Configuration'
+    if (currentTab === 'theme') return 'Theme Editor'
+    if (currentTab === 'dashboard') return 'Dashboard Builder'
+    if (currentTab === 'reports') return 'Report Designer'
     return 'Security & Compliance Center'
-  }, [activeTab])
+  }, [currentTab])
 
   const sessionExpiryLabel = useMemo(() => {
     if (!session) return 'Not signed in'
@@ -200,31 +282,16 @@ function App() {
           <div className="workspace">
             <aside className="sidebar">
               <h3>Workspace</h3>
-              <p className="helper-text">Use Alt+1/2/3/4 keyboard shortcuts to switch modules.</p>
-              <button
-                className={activeTab === 'theme' ? 'active' : ''}
-                onClick={() => setActiveTab('theme')}
-              >
-                Theme Editor
-              </button>
-              <button
-                className={activeTab === 'dashboard' ? 'active' : ''}
-                onClick={() => setActiveTab('dashboard')}
-              >
-                Dashboard Builder
-              </button>
-              <button
-                className={activeTab === 'reports' ? 'active' : ''}
-                onClick={() => setActiveTab('reports')}
-              >
-                Report Designer
-              </button>
-              <button
-                className={activeTab === 'compliance' ? 'active' : ''}
-                onClick={() => setActiveTab('compliance')}
-              >
-                Security & Compliance
-              </button>
+              <p className="helper-text">Use Alt+1..7 keyboard shortcuts to switch modules.</p>
+              {visibleTabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    className={currentTab === tab.id ? 'active' : ''}
+                    onClick={() => setActiveTab(tab.id)}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
 
               <div className="meta-card">
                 <h4>Backend Capability</h4>
@@ -274,20 +341,40 @@ function App() {
 
             <section className="workspace-main">
               <h2>{tabTitle}</h2>
-              {activeTab === 'theme' ? (
-                <ThemeEditor token={token} tenantId={tenantId} onThemeUpdated={setThemePreview} />
+              {currentTab === 'onboarding' ? (
+                <OnboardingWorkbench token={token} tenantId={tenantId} canWrite={canWriteOnboarding} />
               ) : null}
-              {activeTab === 'dashboard' ? (
-                <DashboardBuilder token={token} tenantId={tenantId} />
+              {currentTab === 'integrations' ? (
+                <IntegrationsAdminPanel token={token} tenantId={tenantId} canWrite={canWriteIntegrations} />
               ) : null}
-              {activeTab === 'reports' ? (
-                <ReportDesigner token={token} tenantId={tenantId} />
+              {currentTab === 'governance' ? (
+                <GovernanceConfigCenter
+                  token={token}
+                  tenantId={tenantId}
+                  userId={session?.sub}
+                  canWrite={canWriteGovernance}
+                />
               ) : null}
-              {activeTab === 'compliance' ? (
+              {currentTab === 'theme' ? (
+                <ThemeEditor
+                  token={token}
+                  tenantId={tenantId}
+                  onThemeUpdated={setThemePreview}
+                  canWrite={canWriteBranding}
+                />
+              ) : null}
+              {currentTab === 'dashboard' ? (
+                <DashboardBuilder token={token} tenantId={tenantId} canWrite={canWriteDashboard} />
+              ) : null}
+              {currentTab === 'reports' ? (
+                <ReportDesigner token={token} tenantId={tenantId} canWrite={canWriteReports} />
+              ) : null}
+              {currentTab === 'compliance' ? (
                 <SecurityComplianceCenter
                   token={token}
                   tenantId={tenantId}
                   onAccessibilityUpdated={setAccessibility}
+                  canWrite={canWriteCompliance}
                 />
               ) : null}
             </section>

@@ -30,6 +30,15 @@ To support an intuitive and fluid UI implementation, the backend provides config
 
 These APIs are intended for a design-system driven front-end where components are dynamically configured per tenant/user.
 
+The frontend now provides a complete workspace wrapper including:
+
+- onboarding workbench UI
+- integrations administration UI
+- governance/settings/configuration UI
+- branding, dashboard, reporting, and security/compliance modules
+
+Navigation is role-aware and supports keyboard shortcut driven operation.
+
 ## Customizable Dashboards
 
 Users can persist personalized dashboards including layout and widgets.

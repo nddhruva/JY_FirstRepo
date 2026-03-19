@@ -196,6 +196,33 @@ a {
   box-shadow: var(--shadow);
 }
 
+.subpanel {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.85rem;
+  margin-top: 0.85rem;
+  background: #fff;
+}
+
+.subpanel h3,
+.subpanel h4 {
+  margin: 0 0 0.6rem;
+  font-family: var(--font-heading);
+}
+
+.json-preview {
+  margin-top: 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 0.65rem 0.75rem;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
 .panel-header {
   display: flex;
   align-items: center;

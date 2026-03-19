@@ -4,6 +4,9 @@ Frontend implementation for the Application Onboarding Platform.
 
 ## Implemented Modules
 
+- Onboarding Workbench (application create/list, instances, ingest, questionnaire assignment, plan/execute)
+- Integrations Admin (connector search/scaffold, auth provider config, sync connector config/job execution)
+- Governance & Config Center (exports, provider consent, questionnaire/workflow templates, localization viewer)
 - Theme Editor (branding tokens and asset uploads)
 - Drag/drop Dashboard Builder (widget composition)
 - Analytics visualizations (progress, denials, errors, focus areas)

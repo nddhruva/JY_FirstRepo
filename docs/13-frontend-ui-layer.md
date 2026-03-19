@@ -6,6 +6,9 @@ A production-style React + TypeScript frontend has been implemented in `frontend
 
 Key UI modules delivered:
 
+- Onboarding Workbench (application lifecycle and onboarding execution)
+- Integrations Administration (connector/auth/sync operations)
+- Governance & Config Center (templates, consent, exports, localization view)
 - Theme Editor (tenant branding and asset upload)
 - Drag-and-drop Dashboard Builder (widget personalization)
 - Dashboard Analytics (progress/completions/denials/errors/focus items)
@@ -33,7 +36,64 @@ APIs used:
 - `PUT /tenants/{tenantId}/branding`
 - `POST /tenants/{tenantId}/branding/assets`
 
-### 2) Dashboard Builder
+### 2) Onboarding Workbench
+
+Capabilities:
+- create and list applications
+- filter applications by status/environment
+- manage application instances
+- ingest data-lake/GRC payloads
+- assign questionnaires to stakeholders
+- generate onboarding plan and execute onboarding
+
+APIs used:
+- `POST /applications`
+- `GET /applications`
+- `POST /applications/{applicationId}/ingest`
+- `GET /applications/{applicationId}/instances`
+- `POST /applications/{applicationId}/instances`
+- `POST /applications/{applicationId}/questionnaires/assign`
+- `POST /applications/{applicationId}/onboarding/plan`
+- `POST /applications/{applicationId}/onboarding/execute`
+
+### 3) Integrations Administration
+
+Capabilities:
+- search connector catalog and generate custom connector scaffold
+- configure enterprise auth providers
+- configure sync connectors and execute sync jobs
+
+APIs used:
+- `POST /connectors/catalog/search`
+- `POST /connectors/custom/scaffold`
+- `GET /integrations/auth-providers/catalog`
+- `POST /integrations/auth-providers`
+- `GET /integrations/auth-providers`
+- `PATCH /integrations/auth-providers/{providerConfigId}`
+- `GET /integrations/sync/connectors/catalog`
+- `POST /integrations/sync/connectors`
+- `GET /integrations/sync/connectors`
+- `POST /integrations/sync/jobs/run`
+- `GET /integrations/sync/jobs/{jobId}`
+
+### 4) Governance & Config Center
+
+Capabilities:
+- queue configuration export jobs
+- manage provider consent requests and decisions
+- configure questionnaire templates and workflow templates
+- inspect translation bundles by namespace/locale
+
+APIs used:
+- `POST /exports/configuration`
+- `POST /consent/provider-access`
+- `PUT /consent/provider-access`
+- `POST /questionnaire-templates`
+- `POST /workflow-templates`
+- `GET /i18n/locales`
+- `GET /i18n/translations/{namespace}`
+
+### 5) Dashboard Builder
 
 Capabilities:
 - add widgets from a widget library
@@ -45,7 +105,7 @@ APIs used:
 - `GET /dashboards/me`
 - `PUT /dashboards/me`
 
-### 3) Analytics Visualization
+### 6) Analytics Visualization
 
 Capabilities:
 - quick-glance donut/bar charts
@@ -54,7 +114,7 @@ Capabilities:
 APIs used:
 - `GET /dashboards/analytics`
 
-### 4) Report Designer
+### 7) Report Designer
 
 Capabilities:
 - generate reports in 4 modes:
@@ -69,7 +129,7 @@ APIs used:
 - `POST /reports/generate`
 - `GET /reports`
 
-### 5) Security & Compliance Center
+### 8) Security & Compliance Center
 
 Capabilities:
 - view framework catalog coverage (SOC, GDPR, HIPAA, SOX, PCI, CCPA/CPRA, ISO)

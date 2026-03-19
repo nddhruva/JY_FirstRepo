@@ -11,6 +11,7 @@ import { firstValidationError, reportDraftSchema } from '../validation'
 interface ReportDesignerProps {
   token: string
   tenantId: string
+  canWrite: boolean
 }
 
 interface ReportDraft {
@@ -30,7 +31,7 @@ const aiPromptSuggestions = [
   'Identify applications that need urgent onboarding attention',
 ]
 
-export function ReportDesigner({ token, tenantId }: ReportDesignerProps) {
+export function ReportDesigner({ token, tenantId, canWrite }: ReportDesignerProps) {
   const queryClient = useQueryClient()
   const [formError, setFormError] = useState<string | null>(null)
   const [draft, setDraft] = useState<ReportDraft>({
@@ -90,6 +91,10 @@ export function ReportDesigner({ token, tenantId }: ReportDesignerProps) {
 
   function handleGenerate() {
     setFormError(null)
+    if (!canWrite) {
+      setFormError('Your role has read-only report access.')
+      return
+    }
     try {
       reportDraftSchema.parse({ title: draft.title, limit: draft.limit })
       if (draft.mode === 'sql') {
@@ -122,7 +127,7 @@ export function ReportDesigner({ token, tenantId }: ReportDesignerProps) {
     <section className="panel">
       <div className="panel-header">
         <h2>Report Designer</h2>
-        <button disabled={reportMutation.isPending} onClick={handleGenerate}>
+        <button disabled={reportMutation.isPending || !canWrite} onClick={handleGenerate}>
           {reportMutation.isPending ? 'Generating...' : 'Generate Report'}
         </button>
       </div>

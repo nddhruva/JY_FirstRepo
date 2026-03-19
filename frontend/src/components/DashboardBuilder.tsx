@@ -18,6 +18,7 @@ import type { DashboardWidget } from '../types'
 interface DashboardBuilderProps {
   token: string
   tenantId: string
+  canWrite: boolean
 }
 
 const widgetLibrary: Array<{ type: string; title: string }> = [
@@ -33,6 +34,7 @@ function SortableWidgetItem({
   widget,
   index,
   total,
+  readOnly,
   onMoveUp,
   onMoveDown,
   onRemove,
@@ -40,6 +42,7 @@ function SortableWidgetItem({
   widget: DashboardWidget
   index: number
   total: number
+  readOnly: boolean
   onMoveUp: (id: string) => void
   onMoveDown: (id: string) => void
   onRemove: (id: string) => void
@@ -64,7 +67,7 @@ function SortableWidgetItem({
         <button
           type="button"
           onClick={() => onMoveUp(widget.id)}
-          disabled={index === 0}
+          disabled={index === 0 || readOnly}
           aria-label={`Move ${widget.title} up`}
         >
           ↑
@@ -72,12 +75,12 @@ function SortableWidgetItem({
         <button
           type="button"
           onClick={() => onMoveDown(widget.id)}
-          disabled={index === total - 1}
+          disabled={index === total - 1 || readOnly}
           aria-label={`Move ${widget.title} down`}
         >
           ↓
         </button>
-        <button onClick={() => onRemove(widget.id)} aria-label={`Remove ${widget.title}`}>
+        <button onClick={() => onRemove(widget.id)} aria-label={`Remove ${widget.title}`} disabled={readOnly}>
           Remove
         </button>
       </div>
@@ -85,7 +88,7 @@ function SortableWidgetItem({
   )
 }
 
-export function DashboardBuilder({ token, tenantId }: DashboardBuilderProps) {
+export function DashboardBuilder({ token, tenantId, canWrite }: DashboardBuilderProps) {
   const queryClient = useQueryClient()
   const [message, setMessage] = useState<string | null>(null)
   const sensors = useSensors(
@@ -139,6 +142,10 @@ export function DashboardBuilder({ token, tenantId }: DashboardBuilderProps) {
   }
 
   function addWidget(type: string, title: string) {
+    if (!canWrite) {
+      setMessage('Your role has read-only dashboard access.')
+      return
+    }
     const updated = [...widgets, { id: crypto.randomUUID(), type, title }]
     queryClient.setQueryData(['dashboard', tenantId], {
       ...(dashboardQuery.data ?? { widgets: [] }),
@@ -152,6 +159,10 @@ export function DashboardBuilder({ token, tenantId }: DashboardBuilderProps) {
   }
 
   function removeWidget(id: string) {
+    if (!canWrite) {
+      setMessage('Your role has read-only dashboard access.')
+      return
+    }
     const updated = widgets.filter((item) => item.id !== id)
     queryClient.setQueryData(['dashboard', tenantId], {
       ...(dashboardQuery.data ?? {}),
@@ -160,6 +171,10 @@ export function DashboardBuilder({ token, tenantId }: DashboardBuilderProps) {
   }
 
   function moveWidgetByOffset(id: string, offset: -1 | 1) {
+    if (!canWrite) {
+      setMessage('Your role has read-only dashboard access.')
+      return
+    }
     const index = widgets.findIndex((item) => item.id === id)
     if (index < 0) return
     const targetIndex = index + offset
@@ -191,7 +206,7 @@ export function DashboardBuilder({ token, tenantId }: DashboardBuilderProps) {
         <h2>Dashboard Builder</h2>
         <button
           onClick={() => saveMutation.mutate(widgets)}
-          disabled={saveMutation.isPending || !widgets.length}
+          disabled={saveMutation.isPending || !widgets.length || !canWrite}
         >
           {saveMutation.isPending ? 'Saving...' : 'Save Dashboard'}
         </button>
@@ -203,13 +218,13 @@ export function DashboardBuilder({ token, tenantId }: DashboardBuilderProps) {
 
       <div className="widget-library">
         {widgetLibrary.map((widget) => (
-          <button key={widget.type} onClick={() => addWidget(widget.type, widget.title)}>
+          <button key={widget.type} onClick={() => addWidget(widget.type, widget.title)} disabled={!canWrite}>
             + {widget.title}
           </button>
         ))}
       </div>
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={canWrite ? handleDragEnd : undefined}>
         <SortableContext items={widgets.map((item) => item.id)} strategy={verticalListSortingStrategy}>
           <ul className="widget-list">
             {widgets.map((widget, index) => (
@@ -218,6 +233,7 @@ export function DashboardBuilder({ token, tenantId }: DashboardBuilderProps) {
                 widget={widget}
                 index={index}
                 total={widgets.length}
+                readOnly={!canWrite}
                 onMoveUp={(id) => moveWidgetByOffset(id, -1)}
                 onMoveDown={(id) => moveWidgetByOffset(id, 1)}
                 onRemove={removeWidget}

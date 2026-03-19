@@ -11,6 +11,7 @@ interface ThemeEditorProps {
   token: string
   tenantId: string
   onThemeUpdated: (theme: BrandingConfig) => void
+  canWrite: boolean
 }
 
 const defaultPalette: Record<string, string> = {
@@ -27,7 +28,7 @@ const defaultFonts: Record<string, string> = {
   mono: 'JetBrains Mono, ui-monospace, monospace',
 }
 
-export function ThemeEditor({ token, tenantId, onThemeUpdated }: ThemeEditorProps) {
+export function ThemeEditor({ token, tenantId, onThemeUpdated, canWrite }: ThemeEditorProps) {
   const queryClient = useQueryClient()
   const [assetType, setAssetType] = useState<'logo' | 'font' | 'background' | 'palette' | 'other'>(
     'logo',
@@ -115,6 +116,10 @@ export function ThemeEditor({ token, tenantId, onThemeUpdated }: ThemeEditorProp
   async function handleSave() {
     setSaveMessage(null)
     setFormError(null)
+    if (!canWrite) {
+      setFormError('Your role has read-only access for branding.')
+      return
+    }
     try {
       brandingUrlSchema.parse(formState.logoUrl ?? '')
       brandingUrlSchema.parse(formState.backgroundImageUrl ?? '')
@@ -138,7 +143,7 @@ export function ThemeEditor({ token, tenantId, onThemeUpdated }: ThemeEditorProp
     <section className="panel">
       <div className="panel-header">
         <h2>Theme Editor</h2>
-        <button onClick={handleSave} disabled={saveMutation.isPending}>
+        <button onClick={handleSave} disabled={saveMutation.isPending || !canWrite}>
           {saveMutation.isPending ? 'Saving...' : 'Save Theme'}
         </button>
       </div>
@@ -257,7 +262,13 @@ export function ThemeEditor({ token, tenantId, onThemeUpdated }: ThemeEditorProp
         />
         <button
           disabled={!assetFile || uploadMutation.isPending}
-          onClick={() => uploadMutation.mutate()}
+          onClick={() => {
+            if (!canWrite) {
+              setFormError('Your role has read-only access for branding.')
+              return
+            }
+            uploadMutation.mutate()
+          }}
         >
           {uploadMutation.isPending ? 'Uploading...' : 'Upload Asset'}
         </button>

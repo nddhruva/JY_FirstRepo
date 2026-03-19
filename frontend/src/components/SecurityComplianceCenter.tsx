@@ -14,6 +14,7 @@ interface SecurityComplianceCenterProps {
   token: string
   tenantId: string
   onAccessibilityUpdated: (prefs: AccessibilityPreferences) => void
+  canWrite: boolean
 }
 
 const defaultPreferences: AccessibilityPreferences = {
@@ -37,6 +38,7 @@ export function SecurityComplianceCenter({
   token,
   tenantId,
   onAccessibilityUpdated,
+  canWrite,
 }: SecurityComplianceCenterProps) {
   const [scopeJson, setScopeJson] = useState('{\n  "includeEvidence": true,\n  "window": "last_90_days"\n}')
   const [selectedFramework, setSelectedFramework] = useState<string | null>(null)
@@ -206,8 +208,14 @@ export function SecurityComplianceCenter({
           </label>
           <button
             type="button"
-            disabled={!tenantId || !frameworkValue || runReportMutation.isPending}
-            onClick={() => runReportMutation.mutate()}
+            disabled={!tenantId || !frameworkValue || runReportMutation.isPending || !canWrite}
+            onClick={() => {
+              if (!canWrite) {
+                setFormError('Your role has read-only compliance access.')
+                return
+              }
+              runReportMutation.mutate()
+            }}
           >
             {runReportMutation.isPending ? 'Submitting...' : 'Queue Compliance Report'}
           </button>
