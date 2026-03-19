@@ -390,3 +390,14 @@ class SyncJobResponse(BaseModel):
     stats: dict[str, int] = Field(
         default_factory=lambda: {"usersProcessed": 0, "applicationsProcessed": 0, "errors": 0}
     )
+
+
+class AuthTokenRequest(BaseModel):
+    username: str
+    password: str
+
+
+class AuthTokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int

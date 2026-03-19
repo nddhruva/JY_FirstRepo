@@ -41,6 +41,9 @@ The solution is designed to be:
 - `docs/10-cloud-environment-setup.md`  
   Cloud agent environment configuration for preinstalled Python tooling and optimized pytest/uvicorn startup.
 
+- `docs/11-database-and-security-hardening.md`  
+  Database portability model, PostgreSQL + Alembic defaults, JWT auth, and policy enforcement hardening.
+
 - `docs/guides/admin-guide.md`  
   Tenant/platform administration, policy configuration, connectors, and governance operations.
 
@@ -83,14 +86,37 @@ This repository now includes a runnable API MVP based on the blueprint.
 
 - `src/aop_api/main.py` - FastAPI application with blueprint-aligned endpoints.
 - `src/aop_api/models.py` - Pydantic models for core entities and requests.
-- `src/aop_api/store.py` - In-memory data store and seeded catalogs.
+- `src/aop_api/db_models.py` - SQLAlchemy ORM models for persistent storage.
+- `src/aop_api/db.py` - Database engine/session configuration.
+- `src/aop_api/security.py` - JWT authentication and password hashing.
+- `src/aop_api/policy.py` - Role/permission policy enforcement.
+- `src/aop_api/graph.py` - Neo4j graph adapter for graph-capable deployments.
+- `alembic/` + `alembic.ini` - Alembic migration scaffolding (PostgreSQL-ready by default).
 - `tests/test_api_mvp.py` - End-to-end API tests for core flows.
 
 ### Run locally
 
 ```bash
 python3 -m pip install -r requirements.txt
+cp .env.example .env  # then customize secrets/URLs
+export AOP_DATABASE_URL="postgresql+psycopg://postgres:postgres@localhost:5432/aop"
+export AOP_JWT_SECRET_KEY="change-me"
+python3 -m alembic upgrade head
 python3 -m uvicorn aop_api.main:app --app-dir src --host 0.0.0.0 --port 8000
+```
+
+### Get a JWT token
+
+```bash
+curl -s -X POST "http://localhost:8000/auth/token" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"platform_admin","password":"ChangeMe123!"}'
+```
+
+Use the returned `access_token` as:
+
+```bash
+Authorization: Bearer <token>
 ```
 
 ### Run tests

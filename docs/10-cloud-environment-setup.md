@@ -33,6 +33,10 @@ Ensure cloud agents start with Python 3 tooling and all AOP FastAPI MVP dependen
   - Runs `python -m uvicorn aop_api.main:app --app-dir src --host 0.0.0.0 --port 8000`
   - Uses venv + preconfigured `PYTHONPATH`
 
+- `scripts/run-migrations.sh`
+  - Runs `python -m alembic upgrade head`
+  - Uses venv + preconfigured `PYTHONPATH`
+
 ## Notes
 
 - Install/start scripts are idempotent to support repeated cloud-agent boots.

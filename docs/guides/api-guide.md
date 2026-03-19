@@ -15,6 +15,7 @@ The AOP API is the primary integration surface for onboarding applications into 
 
 ### Authentication
 - Obtain access token from tenant identity provider.
+- For bootstrap/development environments, obtain token from `POST /auth/token`.
 - Pass token in header:
 
 ```http

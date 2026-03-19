@@ -33,14 +33,15 @@ The current MVP implementation (`src/aop_api`) includes:
 
 ## Current Implementation Notes
 
-- Storage is in-memory for MVP speed and portability.
+- Storage is persistent via SQLAlchemy-backed relational database.
+- Default migration path is PostgreSQL + Alembic.
+- JWT auth and role/policy enforcement are active for protected endpoints.
 - Endpoints are intentionally API-first and can be connected to a UI later.
 - Catalogs are seeded with representative industry integrations and are extensible.
+- Optional Neo4j adapter supports graph relationship projection.
 
 ## Next Upgrade Steps
 
-- replace in-memory store with persistent multi-tenant database
-- add JWT validation and policy engine enforcement
 - add background workers for long-running sync/onboarding executions
 - generate SDKs from OpenAPI and wire to front-end
 - add audit log immutability and SIEM adapters
