@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getDatabaseCapabilities } from './api'
 import { AuthPanel } from './components/AuthPanel'
 import { DashboardBuilder } from './components/DashboardBuilder'
+import { DemoPresentationCenter } from './components/DemoPresentationCenter'
 import { GovernanceConfigCenter } from './components/GovernanceConfigCenter'
 import { IntegrationsAdminPanel } from './components/IntegrationsAdminPanel'
 import { OnboardingWorkbench } from './components/OnboardingWorkbench'
@@ -15,6 +16,7 @@ import type { AccessibilityPreferences, BrandingConfig, JwtSessionPayload } from
 import { uuidSchema } from './validation'
 
 type Tab =
+  | 'demo'
   | 'onboarding'
   | 'integrations'
   | 'governance'
@@ -56,7 +58,7 @@ function applyAccessibilityPreferences(preferences: AccessibilityPreferences) {
 function App() {
   const [token, setToken] = useState(() => sessionStorage.getItem('aop_token') ?? '')
   const [tenantId, setTenantId] = useState(() => sessionStorage.getItem('aop_tenant_id') ?? '')
-  const [activeTab, setActiveTab] = useState<Tab>('onboarding')
+  const [activeTab, setActiveTab] = useState<Tab>('demo')
   const [themePreview, setThemePreview] = useState<BrandingConfig | null>(null)
   const [sessionTick, setSessionTick] = useState(() => Date.now())
   const [notice, setNotice] = useState<string | null>(null)
@@ -94,6 +96,11 @@ function App() {
 
   const navTabs = useMemo<Array<{ id: Tab; label: string; visible: boolean }>>(
     () => [
+      {
+        id: 'demo',
+        label: 'Demo Center',
+        visible: true,
+      },
       {
         id: 'onboarding',
         label: 'Onboarding Workbench',
@@ -180,19 +187,21 @@ function App() {
   useEffect(() => {
     function onHotkeys(event: KeyboardEvent) {
       if (!token || !tenantId || !event.altKey) return
-      if (event.key === '1') setActiveTab('onboarding')
-      if (event.key === '2') setActiveTab('integrations')
-      if (event.key === '3') setActiveTab('governance')
-      if (event.key === '4') setActiveTab('theme')
-      if (event.key === '5') setActiveTab('dashboard')
-      if (event.key === '6') setActiveTab('reports')
-      if (event.key === '7') setActiveTab('compliance')
+      if (event.key === '1') setActiveTab('demo')
+      if (event.key === '2') setActiveTab('onboarding')
+      if (event.key === '3') setActiveTab('integrations')
+      if (event.key === '4') setActiveTab('governance')
+      if (event.key === '5') setActiveTab('theme')
+      if (event.key === '6') setActiveTab('dashboard')
+      if (event.key === '7') setActiveTab('reports')
+      if (event.key === '8') setActiveTab('compliance')
     }
     window.addEventListener('keydown', onHotkeys)
     return () => window.removeEventListener('keydown', onHotkeys)
   }, [token, tenantId])
 
   const tabTitle = useMemo(() => {
+    if (currentTab === 'demo') return 'Demo Presentation Center'
     if (currentTab === 'onboarding') return 'Onboarding Workbench'
     if (currentTab === 'integrations') return 'Integrations Administration'
     if (currentTab === 'governance') return 'Governance, Settings & Configuration'
@@ -282,7 +291,7 @@ function App() {
           <div className="workspace">
             <aside className="sidebar">
               <h3>Workspace</h3>
-              <p className="helper-text">Use Alt+1..7 keyboard shortcuts to switch modules.</p>
+              <p className="helper-text">Use Alt+1..8 keyboard shortcuts to switch modules.</p>
               {visibleTabs.map((tab) => (
                   <button
                     key={tab.id}
@@ -341,6 +350,9 @@ function App() {
 
             <section className="workspace-main">
               <h2>{tabTitle}</h2>
+              {currentTab === 'demo' ? (
+                <DemoPresentationCenter token={token} tenantId={tenantId} canWrite={canWriteReports} />
+              ) : null}
               {currentTab === 'onboarding' ? (
                 <OnboardingWorkbench token={token} tenantId={tenantId} canWrite={canWriteOnboarding} />
               ) : null}

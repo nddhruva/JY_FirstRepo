@@ -6,6 +6,7 @@ A production-style React + TypeScript frontend has been implemented in `frontend
 
 Key UI modules delivered:
 
+- Demo Presentation Center (presenter KPIs, storyline, and persona matrix)
 - Onboarding Workbench (application lifecycle and onboarding execution)
 - Integrations Administration (connector/auth/sync operations)
 - Governance & Config Center (templates, consent, exports, localization view)
@@ -35,6 +36,23 @@ APIs used:
 - `GET /tenants/{tenantId}/branding`
 - `PUT /tenants/{tenantId}/branding`
 - `POST /tenants/{tenantId}/branding/assets`
+
+### Demo Presentation Center
+
+Capabilities:
+- presenter-focused KPI snapshot for product storytelling
+- persona matrix for role-based walkthrough
+- status distribution charts and recent report feed
+- quick actions for demo report generation and compliance run trigger
+
+APIs used:
+- `GET /applications`
+- `GET /dashboards/analytics`
+- `GET /reports`
+- `GET /integrations/auth-providers`
+- `GET /integrations/sync/connectors`
+- `GET /compliance/frameworks`
+- `GET /tenants/{tenantId}/branding`
 
 ### 2) Onboarding Workbench
 

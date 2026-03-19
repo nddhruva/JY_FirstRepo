@@ -43,6 +43,10 @@ Ensure cloud agents start with Python 3 tooling and all AOP FastAPI MVP dependen
   - Runs `bandit` and `pip-audit`
   - Supports SAST/dependency vulnerability checks in cloud agents
 
+- `scripts/run-demo-seed.sh`
+  - Runs deterministic demo data seeding for presentation environments
+  - Uses venv + preconfigured `PYTHONPATH`
+
 ## Notes
 
 - Install/start scripts are idempotent to support repeated cloud-agent boots.

@@ -50,6 +50,12 @@ The solution is designed to be:
 - `docs/13-frontend-ui-layer.md`  
   Implemented frontend UI layer with onboarding, integrations administration, governance/configuration, theme editor, dashboard builder, reporting, and security/compliance center.
 
+- `docs/14-api-ui-gap-assessment.md`  
+  End-to-end assessment of missing APIs and missing UI modules.
+
+- `docs/15-demo-showcase-guide.md`  
+  Demo seeding and presentation playbook with role-based personas.
+
 - `docs/guides/admin-guide.md`  
   Tenant/platform administration, policy configuration, connectors, and governance operations.
 
@@ -147,6 +153,12 @@ npm install
 npm run dev
 ```
 
+### Seed demo data for presentations
+
+```bash
+bash scripts/run-demo-seed.sh
+```
+
 ## Cloud Agent Environment Config
 
 Repository-level cloud environment bootstrap is configured at:
@@ -161,6 +173,7 @@ Supporting scripts:
 - `scripts/run-api.sh` - optimized uvicorn runner wrapper
 - `scripts/run-migrations.sh` - Alembic migration wrapper
 - `scripts/security-checks.sh` - bandit + pip-audit security checks
+- `scripts/run-demo-seed.sh` - seeds realistic demo tenant/users/apps/integrations/reporting data
 
 These settings preinstall and validate the AOP FastAPI MVP dependencies:
 

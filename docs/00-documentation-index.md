@@ -17,6 +17,8 @@ This index provides the complete documentation set for the Application Onboardin
 - `11-database-and-security-hardening.md` - Production persistence portability, Alembic migration model, JWT auth, and policy enforcement.
 - `12-ui-branding-dashboard-reporting-security.md` - Branding, dashboard customization, AI-driven reporting, and security quality controls.
 - `13-frontend-ui-layer.md` - Implemented React frontend for branding, dashboard composition, analytics, and report design.
+- `14-api-ui-gap-assessment.md` - Current missing API and UI capabilities with prioritized build sequence.
+- `15-demo-showcase-guide.md` - Demo seeding, presenter runbook, and persona walkthrough.
 
 ## Product Guides
 
