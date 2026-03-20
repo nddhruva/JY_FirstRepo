@@ -114,8 +114,19 @@ cp .env.example .env  # then customize secrets/URLs
 export AOP_DATABASE_URL="postgresql+psycopg://postgres:postgres@localhost:5432/aop"
 export AOP_JWT_SECRET_KEY="change-me"
 python3 -m alembic upgrade head
-python3 -m uvicorn aop_api.main:app --app-dir src --host 0.0.0.0 --port 8000
+python3 -m uvicorn aop_api.main:app --app-dir src --host 127.0.0.1 --port 8000
 ```
+
+One-command local launcher (backend + frontend):
+
+```bash
+bash scripts/run-local.sh
+```
+
+Then open:
+
+- Frontend: `http://localhost:5173`
+- Backend health: `http://127.0.0.1:8000/health`
 
 ### Key production features included
 

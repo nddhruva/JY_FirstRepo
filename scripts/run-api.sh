@@ -14,4 +14,7 @@ if [ -f ".venv/bin/activate" ]; then
 fi
 export PYTHONPATH="/workspace/src:${PYTHONPATH:-}"
 
-"$PYTHON_BIN" -m uvicorn aop_api.main:app --app-dir src --host 0.0.0.0 --port 8000 "$@"
+API_HOST="${AOP_API_HOST:-127.0.0.1}"
+API_PORT="${AOP_API_PORT:-8000}"
+
+"$PYTHON_BIN" -m uvicorn aop_api.main:app --app-dir src --host "$API_HOST" --port "$API_PORT" "$@"
