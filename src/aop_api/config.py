@@ -27,11 +27,16 @@ class Settings:
     upload_dir: str
     max_upload_bytes: int
     cors_origins: list[str]
+    cors_origin_regex: str | None
 
 
 def get_settings() -> Settings:
     cors_raw = getenv("AOP_CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
     cors_origins = [item.strip() for item in cors_raw.split(",") if item.strip()]
+    cors_origin_regex = getenv(
+        "AOP_CORS_ORIGIN_REGEX",
+        r"^https://.*\.cursorvm\.com$|^https://.*\.cursor\.sh$|^https://.*\.cursor\.com$",
+    )
     return Settings(
         database_url=getenv("AOP_DATABASE_URL", "sqlite+pysqlite:///./aop.db"),
         jwt_secret_key=getenv("AOP_JWT_SECRET_KEY", "change-me-in-production"),
@@ -43,6 +48,7 @@ def get_settings() -> Settings:
         upload_dir=getenv("AOP_UPLOAD_DIR", "./uploads"),
         max_upload_bytes=int(getenv("AOP_MAX_UPLOAD_BYTES", str(5 * 1024 * 1024))),
         cors_origins=cors_origins,
+        cors_origin_regex=cors_origin_regex,
     )
 
 

@@ -24,7 +24,35 @@ import type {
   TranslationBundle,
 } from './types'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
+function inferApiBaseUrl(): string {
+  const configured = import.meta.env.VITE_API_BASE_URL?.trim()
+  if (configured) {
+    return configured.replace(/\/+$/, '')
+  }
+  if (typeof window === 'undefined') {
+    return 'http://localhost:8000'
+  }
+
+  const { protocol, hostname, port } = window.location
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:8000'
+  }
+
+  // Cursor cloud domains often encode forwarded port in hostname: "...-5173...."
+  if (hostname.includes('-5173.')) {
+    return `${protocol}//${hostname.replace('-5173.', '-8000.')}`
+  }
+  const hostnameWithApiPort = hostname.replace(/-\d+\./, '-8000.')
+  if (hostnameWithApiPort !== hostname) {
+    return `${protocol}//${hostnameWithApiPort}`
+  }
+  if (port === '5173') {
+    return `${protocol}//${hostname}:8000`
+  }
+  return `${protocol}//${hostname}`
+}
+
+const API_BASE_URL = inferApiBaseUrl()
 const API_TIMEOUT_MS = Number(import.meta.env.VITE_API_TIMEOUT_MS ?? '20000')
 
 export interface AuthTokenResponse {
